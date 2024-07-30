@@ -282,8 +282,12 @@ function updateShapePreview(startPos, endPos) {
     });
     previewLayer.add(circleOutline);
   } else if (state.currentTool === 'line') {
+    const startX = startPos.x + CELL_SIZE / 2;
+    const startY = startPos.y + CELL_SIZE / 2;
+    const endX = endPos.x + CELL_SIZE / 2;
+    const endY = endPos.y + CELL_SIZE / 2;
     const line = new Konva.Line({
-      points: [startPos.x, startPos.y, endPos.x, endPos.y],
+      points: [startX, startY, endX, endY],
       stroke: 'green',
       strokeWidth: 2
     });
