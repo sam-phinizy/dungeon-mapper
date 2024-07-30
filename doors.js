@@ -3,6 +3,7 @@
 import { snapToGrid } from './utils.js';
 
 const DOOR_COLOR = '#8B4513';
+const DOOR_FILL_COLOR = '#DEB887';
 const DOOR_PREVIEW_COLOR = 'rgba(0, 255, 0, 0.5)';
 
 let doors = [];
@@ -87,10 +88,10 @@ function placeDoor(doorLayer) {
   const dx = endX - startX;
   const dy = endY - startY;
   const length = Math.sqrt(dx * dx + dy * dy);
-  
+  const CELL_SIZE = 20;
   // Calculate the rectangle dimensions
   const rectWidth = CELL_SIZE * 0.5;
-  const rectHeight = length * 0.75;  // 3/4 of the door length
+  const rectHeight = length * 0.33;  // 3/4 of the door length
   
   // Calculate the rectangle position and rotation
   const angle = Math.atan2(dy, dx);
@@ -102,7 +103,7 @@ function placeDoor(doorLayer) {
     y: rectY,
     width: rectWidth,
     height: rectHeight,
-    fill: DOOR_COLOR,
+    fill: DOOR_FILL_COLOR,
     rotation: angle * 180 / Math.PI
   });
   

@@ -79,11 +79,16 @@
                 <button id="notesTool" class="tool-button">Notes</button>
             </div>
         </div>
-        <div id="note-editor" style="display: none; position: absolute; background-color: white; padding: 10px; border: 1px solid black;">
+        <div id="note-editor" class="floating-window" style="display: none;">
+            <div class="window-header">Note</div>
+            <div class="window-content">
+
             <textarea id="note-text" rows="4" cols="50"></textarea>
             <br>
             <button id="save-note">Save</button>
             <button id="cancel-note">Cancel</button>
+        </div>
+
         </div>
         <div id="note-popover" style="display: none; position: absolute; background-color: white; padding: 5px; border: 1px solid black; border-radius: 3px; max-width: 200px; z-index: 1000;"></div>
     </div>
