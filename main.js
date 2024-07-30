@@ -133,6 +133,26 @@ function handleStageMouseMove(e) {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
     setCell(row, col, 1 - initialCellState, cellLayer);
+  } else if (state.currentTool === 'notes') {
+    const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
+    const row = Math.floor(snappedPos.y / CELL_SIZE);
+    const col = Math.floor(snappedPos.x / CELL_SIZE);
+    showNotePopover(row, col, pos);
+  }
+}
+
+function showNotePopover(row, col, pos) {
+  const key = `${row}-${col}`;
+  const noteText = notes[key];
+  const popover = document.getElementById('note-popover');
+  
+  if (noteText) {
+    popover.textContent = noteText;
+    popover.style.display = 'block';
+    popover.style.left = `${pos.x + 10}px`;
+    popover.style.top = `${pos.y + 10}px`;
+  } else {
+    popover.style.display = 'none';
   }
 }
 
