@@ -208,15 +208,25 @@ function updateShapePreview(startPos, endPos) {
     });
     previewLayer.add(rect);
   } else if (state.currentTool === 'circle') {
-    const radius = Math.sqrt(Math.pow(endPos.x - startPos.x, 2) + Math.pow(endPos.y - startPos.y, 2));
-    const circle = new Konva.Circle({
-      x: startPos.x,
-      y: startPos.y,
-      radius: radius,
+    const centerX = (startPos.x + endPos.x) / 2;
+    const centerY = (startPos.y + endPos.y) / 2;
+    const radius = Math.sqrt(Math.pow(endPos.x - startPos.x, 2) + Math.pow(endPos.y - startPos.y, 2)) / 2;
+    
+    const points = [];
+    for (let angle = 0; angle < 360; angle += 5) {
+      const x = centerX + radius * Math.cos(angle * Math.PI / 180);
+      const y = centerY + radius * Math.sin(angle * Math.PI / 180);
+      const snappedPoint = snapToGrid(x, y, CELL_SIZE);
+      points.push(snappedPoint.x, snappedPoint.y);
+    }
+    
+    const circleOutline = new Konva.Line({
+      points: points,
       stroke: 'green',
-      strokeWidth: 2
+      strokeWidth: 2,
+      closed: true
     });
-    previewLayer.add(circle);
+    previewLayer.add(circleOutline);
   } else if (state.currentTool === 'line') {
     const line = new Konva.Line({
       points: [startPos.x, startPos.y, endPos.x, endPos.y],
