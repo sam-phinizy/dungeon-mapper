@@ -168,6 +168,7 @@ function handleStageMouseDown(e) {
     const y = Math.floor(snappedPos.y / CELL_SIZE);
     openNoteEditor(x, y);
   }
+  saveToLocalStorage(); // Save the updated grid to localStorage
 }
 
 function handleStageMouseMove(e) {
