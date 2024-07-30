@@ -293,41 +293,6 @@ function handleDrop(e) {
   previewLayer.batchDraw();
 }
 
-function createGhostPreview(roomData, pos) {
-  ghostPreview = new Konva.Group({
-    x: pos.x,
-    y: pos.y,
-    opacity: PREVIEW_OPACITY,
-    draggable: true,
-  });
-
-  if (roomData.cells && Array.isArray(roomData.cells)) {
-    roomData.cells.forEach(cell => {
-      const rect = new Konva.Rect({
-        x: cell.col * CELL_SIZE,
-        y: cell.row * CELL_SIZE,
-        width: CELL_SIZE,
-        height: CELL_SIZE,
-        fill: cell.state ? '#ffffff' : '#333333',
-      });
-      ghostPreview.add(rect);
-    });
-  }
-
-  if (roomData.doors && Array.isArray(roomData.doors)) {
-    roomData.doors.forEach(door => {
-      const line = new Konva.Line({
-        points: [door.startX, door.startY, door.endX, door.endY],
-        stroke: '#8B4513',
-        strokeWidth: 3
-      });
-      ghostPreview.add(line);
-    });
-  }
-
-  previewLayer.add(ghostPreview);
-  previewLayer.batchDraw();
-}
 
 function placeRoom(roomData, pos) {
   const offsetX = Math.floor(pos.x / CELL_SIZE);
