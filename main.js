@@ -17,11 +17,26 @@ function loadFromLocalStorage() {
   if (savedGrid) {
     grid.length = 0;
     grid.push(...savedGrid);
+    // Update the visual representation of the grid
+    for (let row = 0; row < grid.length; row++) {
+      for (let col = 0; col < grid[row].length; col++) {
+        const cell = cellLayer.findOne(`#cell-${row}-${col}`);
+        if (cell) {
+          cell.fill(grid[row][col] ? PATH_COLOR : WALL_COLOR);
+        }
+      }
+    }
+    cellLayer.batchDraw();
   }
 
   const savedNotes = JSON.parse(localStorage.getItem('dungeonMapperNotes'));
   if (savedNotes) {
     notes = savedNotes;
+    // Highlight cells with notes
+    for (const key in notes) {
+      const [row, col] = key.split('-').map(Number);
+      highlightNoteCell(row, col);
+    }
   }
 
   const savedChatMessages = JSON.parse(localStorage.getItem('dungeonMapperChatMessages'));
@@ -75,7 +90,6 @@ let draggedRoom = null;
 let ghostPreview = null;
 
 function init() {
-  loadFromLocalStorage();
   initializeGrid(stage, cellLayer, CELL_SIZE);
   drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
   initializeDoorPreview(previewLayer);
@@ -83,6 +97,9 @@ function init() {
   stage.on('mousedown touchstart', handleStageMouseDown);
   stage.on('mousemove touchmove', handleStageMouseMove);
   stage.on('mouseup touchend', handleStageMouseUp);
+
+  // Load saved data from local storage
+  loadFromLocalStorage();
 
   // Redraw the grid based on loaded data
   redrawGrid();
