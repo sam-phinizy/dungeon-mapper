@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function addMessage(message) {
     const messageElement = document.createElement('div');
     messageElement.className = 'chat-message';
-    messageElement.textContent = message;
+    messageElement.innerHTML = marked.parse(message);
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
@@ -211,6 +211,12 @@ document.addEventListener('DOMContentLoaded', () => {
       chatInput.value = '';
     }
   }
+
+  // Initialize marked with some options for safety
+  marked.setOptions({
+    sanitize: true,
+    breaks: true
+  });
 
   chatSend.addEventListener('click', handleSendMessage);
   chatInput.addEventListener('keypress', (e) => {
