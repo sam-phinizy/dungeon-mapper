@@ -57,9 +57,10 @@ function updateDoorPreview(pos, CELL_SIZE, state) {
     startPoint = { x: snappedPos.x, y: snappedPos.y + CELL_SIZE };
     endPoint = { x: snappedPos.x + CELL_SIZE, y: snappedPos.y + CELL_SIZE };
   }
+
   
   doorPreview.findOne('Line').points([startPoint.x, startPoint.y, endPoint.x, endPoint.y]);
-  doorPreview.visible(true);
+doorPreview.visible(true);
   previewLayer.batchDraw();
 }
 
