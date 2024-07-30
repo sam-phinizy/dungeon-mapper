@@ -135,32 +135,6 @@ function handleStageMouseUp() {
   }
 }
 
-function handleDragMove(e) {
-  if (!draggedRoom || !ghostPreview) return;
-
-  const pos = stage.getPointerPosition();
-  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  ghostPreview.position(snappedPos);
-  previewLayer.batchDraw();
-}
-
-function handleDragEnd(e) {
-  if (!draggedRoom) return;
-
-  const pos = stage.getPointerPosition();
-  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  
-  placeRoom(draggedRoom, snappedPos);
-  
-  if (ghostPreview) {
-    ghostPreview.destroy();
-    ghostPreview = null;
-  }
-  
-  draggedRoom = null;
-  previewLayer.batchDraw();
-}
-
 function setTool(tool) {
   state.currentTool = tool;
   document.getElementById('drawTool').classList.toggle('active-tool', tool === 'draw');
