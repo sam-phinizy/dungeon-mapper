@@ -147,10 +147,13 @@ function showNotePopover(row, col, pos) {
   const popover = document.getElementById('note-popover');
   
   if (noteText) {
-    popover.textContent = noteText;
+    popover.innerHTML = noteText.replace(/\n/g, '<br>');
     popover.style.display = 'block';
     popover.style.left = `${pos.x + 10}px`;
     popover.style.top = `${pos.y + 10}px`;
+    popover.style.maxWidth = '300px';
+    popover.style.maxHeight = '200px';
+    popover.style.overflow = 'auto';
   } else {
     popover.style.display = 'none';
   }
