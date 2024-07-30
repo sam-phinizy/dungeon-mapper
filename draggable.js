@@ -4,8 +4,8 @@ export function makeDraggable(element, handle) {
 
   function dragMouseDown(e) {
     e = e || window.event;
-    // Only start dragging if the mouse is on the handle
-    if (e.target === handle) {
+    // Only start dragging if the mouse is on the handle and not on a form element
+    if (e.target === handle && !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(e.target.tagName)) {
       e.preventDefault();
       // get the mouse cursor position at startup:
       pos3 = e.clientX;
