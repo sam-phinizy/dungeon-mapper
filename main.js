@@ -85,6 +85,8 @@ function handleResize() {
   stage.batchDraw();
 }
 
+let initialCellState;
+
 function handleStageMouseDown(e) {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
@@ -97,7 +99,8 @@ function handleStageMouseDown(e) {
     state.isDrawing = true;
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
-    toggleCell(row, col, cellLayer);
+    initialCellState = grid[row][col];
+    setCell(row, col, 1 - initialCellState, cellLayer);
   }
 }
 
@@ -112,7 +115,18 @@ function handleStageMouseMove(e) {
     const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
-    toggleCell(row, col, cellLayer);
+    setCell(row, col, 1 - initialCellState, cellLayer);
+  }
+}
+
+function setCell(row, col, state, cellLayer) {
+  if (row >= 0 && row < grid.length && col >= 0 && col < grid[0].length) {
+    grid[row][col] = state;
+    const cellRect = cellLayer.findOne(`#cell-${row}-${col}`);
+    if (cellRect) {
+      cellRect.fill(state ? '#ffffff' : '#333333');
+      cellLayer.batchDraw();
+    }
   }
 }
 
