@@ -5,6 +5,9 @@ import { initializeDoorPreview, updateDoorPreview, placeDoor, clearDoors, doors 
 import { initializeGrid, drawGrid, toggleCell, clearGrid, grid } from './drawing.js';
 import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
 
+const WALL_COLOR = '#333333';
+const PATH_COLOR = '#ffffff';
+
 let notes = {};
 let chatMessages = [];
 
