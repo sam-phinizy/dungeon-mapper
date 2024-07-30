@@ -255,8 +255,8 @@ function updateShapePreview(startPos, endPos) {
     const rect = new Konva.Rect({
       x: Math.min(startPos.x, endPos.x),
       y: Math.min(startPos.y, endPos.y),
-      width: Math.abs(endPos.x - startPos.x),
-      height: Math.abs(endPos.y - startPos.y),
+      width: Math.abs(endPos.x - startPos.x) + CELL_SIZE,
+      height: Math.abs(endPos.y - startPos.y) + CELL_SIZE,
       stroke: 'green',
       strokeWidth: 2
     });
