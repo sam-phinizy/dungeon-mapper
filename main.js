@@ -321,9 +321,13 @@ function drawShape(startPos, endPos) {
     // Update the grid data structure
     for (let row = Math.min(startRow, endRow); row <= Math.max(startRow, endRow); row++) {
       for (let col = Math.min(startCol, endCol); col <= Math.max(startCol, endCol); col++) {
-        grid[row][col] = 1;
+        dungeonMapperGrid.set(`${col},${row}`, 1);
       }
     }
+    
+    // Clear the preview layer
+    previewLayer.destroyChildren();
+    previewLayer.batchDraw();
   } else if (state.currentTool === 'circle') {
     const centerRow = (startRow + endRow) / 2;
     const centerCol = (startCol + endCol) / 2;
