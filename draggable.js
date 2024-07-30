@@ -1,6 +1,6 @@
-export function makeDraggable(element) {
+export function makeDraggable(element, handle) {
   let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-  element.onmousedown = dragMouseDown;
+  handle.onmousedown = dragMouseDown;
 
   function dragMouseDown(e) {
     e = e || window.event;
