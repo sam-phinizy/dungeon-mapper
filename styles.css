@@ -19,8 +19,31 @@ body {
     font-weight: bold;
 }
 
-.navbar-tools {
+.floating-window {
+    position: absolute;
+    top: 80px;
+    left: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    width: 200px;
+    z-index: 1000;
+    cursor: move;
+}
+
+.window-header {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    font-weight: bold;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.window-content {
+    padding: 10px;
     display: flex;
+    flex-direction: column;
     gap: 10px;
 }
 
@@ -33,7 +56,6 @@ body {
     text-decoration: none;
     display: inline-block;
     font-size: 14px;
-    margin: 4px 2px;
     cursor: pointer;
     border-radius: 4px;
     transition: background-color 0.3s;
@@ -51,6 +73,7 @@ body {
 .content {
     display: flex;
     padding: 20px;
+    position: relative;
 }
 
 #canvas-container {
