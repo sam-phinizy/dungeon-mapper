@@ -20,14 +20,7 @@ function initializeDoorPreview(layer) {
     strokeWidth: 3
   });
   
-  const previewRect = new Konva.Rect({
-    fill: DOOR_PREVIEW_COLOR,
-    width: 100, // increased width to show whole note
-    height: 20  // increased height to show whole note
-  });
-  
   doorPreview.add(previewLine);
-  doorPreview.add(previewRect);
   previewLayer.add(doorPreview);
 }
 
@@ -45,32 +38,27 @@ function updateDoorPreview(pos, CELL_SIZE, state) {
   const xOffset = pos.x - snappedPos.x;
   const yOffset = pos.y - snappedPos.y;
   
-  let startPoint, endPoint, rectPos;
+  let startPoint, endPoint;
   
   if (xOffset < yOffset && xOffset < CELL_SIZE - yOffset) {
     // Left edge
     startPoint = { x: snappedPos.x, y: snappedPos.y };
     endPoint = { x: snappedPos.x, y: snappedPos.y + CELL_SIZE };
-    rectPos = { x: snappedPos.x - 3, y: snappedPos.y + CELL_SIZE / 2 - 3 };
   } else if (yOffset < xOffset && yOffset < CELL_SIZE - xOffset) {
     // Top edge
     startPoint = { x: snappedPos.x, y: snappedPos.y };
     endPoint = { x: snappedPos.x + CELL_SIZE, y: snappedPos.y };
-    rectPos = { x: snappedPos.x + CELL_SIZE / 2 - 3, y: snappedPos.y - 3 };
   } else if (xOffset > yOffset && xOffset > CELL_SIZE - yOffset) {
     // Right edge
     startPoint = { x: snappedPos.x + CELL_SIZE, y: snappedPos.y };
     endPoint = { x: snappedPos.x + CELL_SIZE, y: snappedPos.y + CELL_SIZE };
-    rectPos = { x: snappedPos.x + CELL_SIZE - 3, y: snappedPos.y + CELL_SIZE / 2 - 3 };
   } else {
     // Bottom edge
     startPoint = { x: snappedPos.x, y: snappedPos.y + CELL_SIZE };
     endPoint = { x: snappedPos.x + CELL_SIZE, y: snappedPos.y + CELL_SIZE };
-    rectPos = { x: snappedPos.x + CELL_SIZE / 2 - 3, y: snappedPos.y + CELL_SIZE - 3 };
   }
   
   doorPreview.findOne('Line').points([startPoint.x, startPoint.y, endPoint.x, endPoint.y]);
-  doorPreview.findOne('Rect').position(rectPos);
   doorPreview.visible(true);
   previewLayer.batchDraw();
 }
