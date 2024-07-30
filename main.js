@@ -8,7 +8,6 @@ import { startSelection, updateSelection, endSelection, getSelectedCells, clearS
 const WALL_COLOR = '#1a1a1a';
 const PATH_COLOR = '#1a1a1a';
 
-let dungeonMapperGrid = new Map();
 let notes = {};
 let chatMessages = [];
 
