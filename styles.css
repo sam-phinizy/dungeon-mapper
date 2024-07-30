@@ -7,7 +7,7 @@ body {
 }
 
 .navbar {
-    background-color: #333;
+    background-color: #1a237e;  /* Dark blue color */
     color: white;
     padding: 10px 20px;
     display: flex;
