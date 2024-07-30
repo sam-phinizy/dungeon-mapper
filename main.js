@@ -2,7 +2,6 @@
 
 import { snapToGrid } from './utils.js';
 import { initializeDoorPreview, updateDoorPreview, placeDoor, clearDoors, doors } from './doors.js';
-import { Pin } from './pin.js';
 import { initializeGrid, drawGrid, toggleCell, clearGrid, grid } from './drawing.js';
 import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
 
@@ -21,14 +20,12 @@ const cellLayer = new Konva.Layer();
 const doorLayer = new Konva.Layer();
 const selectionLayer = new Konva.Layer();
 const previewLayer = new Konva.Layer();
-const pinLayer = new Konva.Layer();
 
 stage.add(gridLayer);
 stage.add(cellLayer);
 stage.add(doorLayer);
 stage.add(selectionLayer);
 stage.add(previewLayer);
-stage.add(pinLayer);
 
 const CELL_SIZE = 20;
 const GRID_COLOR = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '#444444' : '#cccccc';
