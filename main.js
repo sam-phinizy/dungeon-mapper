@@ -365,7 +365,16 @@ function drawShape(startPos, endPos) {
     let col = startCol;
     
     while (true) {
-      setCell(row, col, 1, cellLayer);
+      dungeonMapperGrid.set(`${col},${row}`, 1 - initialCellState);
+      const cell = new Konva.Rect({
+        x: col * CELL_SIZE,
+        y: row * CELL_SIZE,
+        width: CELL_SIZE,
+        height: CELL_SIZE,
+        fill: initialCellState ? WALL_COLOR : PATH_COLOR,
+      });
+      cellLayer.add(cell);
+      
       if (row === endRow && col === endCol) break;
       const e2 = 2 * err;
       if (e2 > -dy) {
@@ -378,7 +387,7 @@ function drawShape(startPos, endPos) {
       }
     }
     
-    // Save the updated grid to localStorage
+    cellLayer.batchDraw();
     saveToLocalStorage();
   }
   
