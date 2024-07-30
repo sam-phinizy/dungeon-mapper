@@ -122,7 +122,7 @@ function init() {
   // Listen for changes in color scheme
   window.matchMedia('(prefers-color-scheme: dark)').addListener(handleColorSchemeChange);
   
-  setTool('draw'); // Set initial tool
+  setTool('pen'); // Set initial tool to pen
 }
 
 function handleColorSchemeChange(e) {
