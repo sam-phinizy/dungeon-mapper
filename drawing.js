@@ -69,7 +69,7 @@ function clearGrid(cellLayer) {
   for (let i = 0; i < grid.length; i++) {
     grid[i].fill(0);
   }
-  cellLayer.children.each(child => {
+  cellLayer.getChildren().forEach(child => {
     child.fill(WALL_COLOR);
   });
   cellLayer.draw();
