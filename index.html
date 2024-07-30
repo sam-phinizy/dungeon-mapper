@@ -55,6 +55,20 @@
             background-color: var(--button-bg);
             color: var(--button-text);
         }
+        .tool-row {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .tool-button {
+            flex: 1;
+            margin: 0 2px;
+            padding: 5px;
+        }
+        #floating-tools {
+            width: auto;
+            min-width: 250px;
+        }
     </style>
 </head>
 <body>
@@ -74,13 +88,15 @@
         <div id="floating-tools" class="floating-window">
             <div class="window-header window-title">Tools</div>
             <div class="window-content">
-                <button id="penTool" class="tool-button"><i class="fi fi-rr-pencil"></i></button>
-                <button id="rectTool" class="tool-button"><i class="fi fi-rr-square"></i></button>
-                <button id="circleTool" class="tool-button"><i class="fi fi-rr-circle"></i></button>
-                <button id="lineTool" class="tool-button"><i class="fi fi-rr-line-width"></i></button>
-                <button id="selectTool" class="tool-button"><i class="fi fi-rr-cursor"></i></button>
-                <button id="doorTool" class="tool-button"><i class="fi fi-rr-door-open"></i></button>
-                <button id="notesTool" class="tool-button"><i class="fi fi-rr-note"></i></button>
+                <div class="tool-row">
+                    <button id="penTool" class="tool-button"><i class="fi fi-rr-pencil"></i></button>
+                    <button id="rectTool" class="tool-button"><i class="fi fi-rr-square"></i></button>
+                    <button id="circleTool" class="tool-button"><i class="fi fi-rr-circle"></i></button>
+                    <button id="lineTool" class="tool-button"><i class="fi fi-rr-line-width"></i></button>
+                    <button id="selectTool" class="tool-button"><i class="fi fi-rr-cursor"></i></button>
+                    <button id="doorTool" class="tool-button"><i class="fi fi-rr-door-open"></i></button>
+                    <button id="notesTool" class="tool-button"><i class="fi fi-rr-note"></i></button>
+                </div>
             </div>
         </div>
         <div id="note-editor" class="floating-window" style="display: none;">
