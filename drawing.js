@@ -6,6 +6,7 @@ const WALL_COLOR = '#333333';
 const PATH_COLOR = '#ffffff';
 
 let grid = [];
+let doors = [];
 
 function initializeGrid(stage, cellLayer, CELL_SIZE) {
   const rows = Math.floor(stage.height() / CELL_SIZE);
@@ -75,4 +76,4 @@ function clearGrid(cellLayer) {
   cellLayer.draw();
 }
 
-export { initializeGrid, drawGrid, toggleCell, clearGrid, grid };
+export { initializeGrid, drawGrid, toggleCell, clearGrid, grid, doors };
