@@ -190,4 +190,31 @@ document.addEventListener('DOMContentLoaded', () => {
     isResizing = false;
     document.removeEventListener('mousemove', handleMouseMove);
   }
+
+  // Chat functionality
+  const chatInput = document.getElementById('chat-input');
+  const chatSend = document.getElementById('chat-send');
+  const chatMessages = document.getElementById('chat-messages');
+
+  function addMessage(message) {
+    const messageElement = document.createElement('p');
+    messageElement.textContent = message;
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  function handleSendMessage() {
+    const message = chatInput.value.trim();
+    if (message) {
+      addMessage(message);
+      chatInput.value = '';
+    }
+  }
+
+  chatSend.addEventListener('click', handleSendMessage);
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      handleSendMessage();
+    }
+  });
 });
