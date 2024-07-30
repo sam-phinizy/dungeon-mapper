@@ -327,6 +327,9 @@ function drawShape(startPos, endPos) {
       }
     }
     
+    // Save the updated grid to localStorage
+    saveToLocalStorage();
+    
     // Clear the preview layer
     previewLayer.destroyChildren();
     previewLayer.batchDraw();
@@ -342,6 +345,9 @@ function drawShape(startPos, endPos) {
         }
       }
     }
+    
+    // Save the updated grid to localStorage
+    saveToLocalStorage();
   } else if (state.currentTool === 'line') {
     const dx = Math.abs(endCol - startCol);
     const dy = Math.abs(endRow - startRow);
@@ -365,6 +371,9 @@ function drawShape(startPos, endPos) {
         row += sy;
       }
     }
+    
+    // Save the updated grid to localStorage
+    saveToLocalStorage();
   }
   
   previewLayer.destroyChildren();
