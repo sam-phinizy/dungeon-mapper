@@ -5,9 +5,15 @@ import { initializeDoorPreview, updateDoorPreview, placeDoor, clearDoors, doors 
 import { initializeGrid, drawGrid, toggleCell, clearGrid, grid } from './drawing.js';
 import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
 
+function calculateAvailableWidth() {
+  const totalWidth = window.innerWidth;
+  const libraryWidth = document.getElementById('saved-rooms').offsetWidth;
+  return totalWidth - libraryWidth;
+}
+
 const stage = new Konva.Stage({
   container: 'canvas-container',
-  width: 800,
+  width: calculateAvailableWidth(),
   height: 600,
 });
 
@@ -54,7 +60,22 @@ function init() {
   document.getElementById('selectTool').addEventListener('click', () => setTool('select'));
   document.getElementById('doorTool').addEventListener('click', () => setTool('door'));
   
+  window.addEventListener('resize', handleResize);
+  
   setTool('draw'); // Set initial tool
+}
+
+function handleResize() {
+  const newWidth = calculateAvailableWidth();
+  stage.width(newWidth);
+  gridLayer.width(newWidth);
+  cellLayer.width(newWidth);
+  doorLayer.width(newWidth);
+  selectionLayer.width(newWidth);
+  previewLayer.width(newWidth);
+  
+  drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
+  stage.batchDraw();
 }
 
 function handleStageMouseDown(e) {
