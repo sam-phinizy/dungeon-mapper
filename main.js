@@ -53,7 +53,10 @@ function init() {
   stage.on('mousemove touchmove', handleStageMouseMove);
   stage.on('mouseup touchend', handleStageMouseUp);
   
-  document.getElementById('drawTool').addEventListener('click', () => setTool('draw'));
+  document.getElementById('penTool').addEventListener('click', () => setTool('pen'));
+  document.getElementById('rectTool').addEventListener('click', () => setTool('rect'));
+  document.getElementById('circleTool').addEventListener('click', () => setTool('circle'));
+  document.getElementById('lineTool').addEventListener('click', () => setTool('line'));
   document.getElementById('selectTool').addEventListener('click', () => setTool('select'));
   document.getElementById('doorTool').addEventListener('click', () => setTool('door'));
   document.getElementById('notesTool').addEventListener('click', () => setTool('notes'));
@@ -108,12 +111,15 @@ function handleStageMouseDown(e) {
     placeDoor(doorLayer);
   } else if (state.currentTool === 'select') {
     startSelection(snappedPos, selectionLayer, CELL_SIZE);
-  } else if (state.currentTool === 'draw') {
+  } else if (state.currentTool === 'pen') {
     state.isDrawing = true;
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
     initialCellState = grid[row][col];
     setCell(row, col, 1 - initialCellState, cellLayer);
+  } else if (state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') {
+    state.isDrawing = true;
+    state.startPos = snappedPos;
   } else if (state.currentTool === 'notes') {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
@@ -123,18 +129,19 @@ function handleStageMouseDown(e) {
 
 function handleStageMouseMove(e) {
   const pos = stage.getPointerPosition();
+  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
 
   if (state.currentTool === 'door') {
     updateDoorPreview(pos, CELL_SIZE, state);
   } else if (state.currentTool === 'select') {
     updateSelection(pos, CELL_SIZE);
-  } else if (state.currentTool === 'draw' && state.isDrawing) {
-    const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
+  } else if (state.currentTool === 'pen' && state.isDrawing) {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
     setCell(row, col, 1 - initialCellState, cellLayer);
+  } else if ((state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') && state.isDrawing) {
+    updateShapePreview(state.startPos, snappedPos);
   } else if (state.currentTool === 'notes') {
-    const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
     showNotePopover(row, col, pos);
@@ -176,14 +183,112 @@ function setCell(row, col, state, cellLayer) {
 function handleStageMouseUp() {
   if (state.currentTool === 'select') {
     endSelection();
-  } else if (state.currentTool === 'draw') {
-    state.isDrawing = false;
+  } else if (state.currentTool === 'pen' || state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') {
+    if (state.isDrawing) {
+      if (state.currentTool !== 'pen') {
+        const endPos = snapToGrid(stage.getPointerPosition().x, stage.getPointerPosition().y, CELL_SIZE);
+        drawShape(state.startPos, endPos);
+      }
+      state.isDrawing = false;
+    }
   }
+}
+
+function updateShapePreview(startPos, endPos) {
+  previewLayer.destroyChildren();
+  
+  if (state.currentTool === 'rect') {
+    const rect = new Konva.Rect({
+      x: Math.min(startPos.x, endPos.x),
+      y: Math.min(startPos.y, endPos.y),
+      width: Math.abs(endPos.x - startPos.x),
+      height: Math.abs(endPos.y - startPos.y),
+      stroke: 'green',
+      strokeWidth: 2
+    });
+    previewLayer.add(rect);
+  } else if (state.currentTool === 'circle') {
+    const radius = Math.sqrt(Math.pow(endPos.x - startPos.x, 2) + Math.pow(endPos.y - startPos.y, 2));
+    const circle = new Konva.Circle({
+      x: startPos.x,
+      y: startPos.y,
+      radius: radius,
+      stroke: 'green',
+      strokeWidth: 2
+    });
+    previewLayer.add(circle);
+  } else if (state.currentTool === 'line') {
+    const line = new Konva.Line({
+      points: [startPos.x, startPos.y, endPos.x, endPos.y],
+      stroke: 'green',
+      strokeWidth: 2
+    });
+    previewLayer.add(line);
+  }
+  
+  previewLayer.batchDraw();
+}
+
+function drawShape(startPos, endPos) {
+  const startRow = Math.floor(startPos.y / CELL_SIZE);
+  const startCol = Math.floor(startPos.x / CELL_SIZE);
+  const endRow = Math.floor(endPos.y / CELL_SIZE);
+  const endCol = Math.floor(endPos.x / CELL_SIZE);
+  
+  if (state.currentTool === 'rect') {
+    for (let row = Math.min(startRow, endRow); row <= Math.max(startRow, endRow); row++) {
+      for (let col = Math.min(startCol, endCol); col <= Math.max(startCol, endCol); col++) {
+        setCell(row, col, 1, cellLayer);
+      }
+    }
+  } else if (state.currentTool === 'circle') {
+    const centerRow = (startRow + endRow) / 2;
+    const centerCol = (startCol + endCol) / 2;
+    const radius = Math.sqrt(Math.pow(endRow - startRow, 2) + Math.pow(endCol - startCol, 2)) / 2;
+    
+    for (let row = Math.floor(centerRow - radius); row <= Math.ceil(centerRow + radius); row++) {
+      for (let col = Math.floor(centerCol - radius); col <= Math.ceil(centerCol + radius); col++) {
+        if (Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2) <= Math.pow(radius, 2)) {
+          setCell(row, col, 1, cellLayer);
+        }
+      }
+    }
+  } else if (state.currentTool === 'line') {
+    const dx = Math.abs(endCol - startCol);
+    const dy = Math.abs(endRow - startRow);
+    const sx = startCol < endCol ? 1 : -1;
+    const sy = startRow < endRow ? 1 : -1;
+    let err = dx - dy;
+    
+    let row = startRow;
+    let col = startCol;
+    
+    while (true) {
+      setCell(row, col, 1, cellLayer);
+      if (row === endRow && col === endCol) break;
+      const e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        col += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        row += sy;
+      }
+    }
+  }
+  
+  previewLayer.destroyChildren();
+  previewLayer.batchDraw();
+  cellLayer.batchDraw();
 }
 
 function setTool(tool) {
   state.currentTool = tool;
-  document.getElementById('drawTool').classList.toggle('active-tool', tool === 'draw');
+  document.getElementById('penTool').classList.toggle('active-tool', tool === 'pen');
+  document.getElementById('rectTool').classList.toggle('active-tool', tool === 'rect');
+  document.getElementById('circleTool').classList.toggle('active-tool', tool === 'circle');
+  document.getElementById('lineTool').classList.toggle('active-tool', tool === 'line');
   document.getElementById('selectTool').classList.toggle('active-tool', tool === 'select');
   document.getElementById('doorTool').classList.toggle('active-tool', tool === 'door');
   document.getElementById('notesTool').classList.toggle('active-tool', tool === 'notes');
