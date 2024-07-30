@@ -239,6 +239,9 @@ function handleStageMouseUp() {
         drawShape(state.startPos, endPos);
       }
       state.isDrawing = false;
+      state.startPos = null; // Reset startPos
+      previewLayer.destroyChildren(); // Clear the preview layer
+      previewLayer.batchDraw(); // Redraw the preview layer
     }
   }
 }
