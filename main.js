@@ -28,7 +28,7 @@ stage.add(selectionLayer);
 stage.add(previewLayer);
 
 const CELL_SIZE = 20;
-const GRID_COLOR = '#cccccc';
+const GRID_COLOR = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '#444444' : '#cccccc';
 const PREVIEW_CELL_SIZE = 5;
 const PREVIEW_OPACITY = 0.5;
 
@@ -56,7 +56,17 @@ function init() {
   
   window.addEventListener('resize', handleResize);
   
+  // Listen for changes in color scheme
+  window.matchMedia('(prefers-color-scheme: dark)').addListener(handleColorSchemeChange);
+  
   setTool('draw'); // Set initial tool
+}
+
+function handleColorSchemeChange(e) {
+  const isDarkMode = e.matches;
+  const newGridColor = isDarkMode ? '#444444' : '#cccccc';
+  drawGrid(stage, gridLayer, CELL_SIZE, newGridColor);
+  stage.batchDraw();
 }
 
 function handleResize() {

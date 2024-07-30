@@ -6,6 +6,55 @@
     <title>DungeonMapper</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/konva@8.3.13/konva.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #000000;
+            --navbar-bg: #f8f9fa;
+            --navbar-text: #000000;
+            --sidebar-bg: #f0f0f0;
+            --chat-bg: #ffffff;
+            --chat-text: #000000;
+            --button-bg: #007bff;
+            --button-text: #ffffff;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: #ffffff;
+                --navbar-bg: #1e1e1e;
+                --navbar-text: #ffffff;
+                --sidebar-bg: #1a1a1a;
+                --chat-bg: #2a2a2a;
+                --chat-text: #ffffff;
+                --button-bg: #0056b3;
+                --button-text: #ffffff;
+            }
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        .navbar {
+            background-color: var(--navbar-bg);
+            color: var(--navbar-text);
+        }
+        #sidebar {
+            background-color: var(--sidebar-bg);
+        }
+        #chat-messages {
+            background-color: var(--chat-bg);
+            color: var(--chat-text);
+        }
+        #chat-input {
+            background-color: var(--chat-bg);
+            color: var(--chat-text);
+        }
+        button {
+            background-color: var(--button-bg);
+            color: var(--button-text);
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar">
