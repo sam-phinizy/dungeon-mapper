@@ -201,7 +201,7 @@ function showNotePopover(row, col, pos) {
   const key = `${row}-${col}`;
   const noteText = notes[key];
   const popover = document.getElementById('note-popover');
-  
+  console.log("Note text:", noteText)
   if (noteText) {
     popover.innerHTML = noteText.replace(/\n/g, noteText);
     popover.style.display = 'block';
