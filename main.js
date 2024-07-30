@@ -2,7 +2,7 @@
 
 import { snapToGrid } from './utils.js';
 import { initializeDoorPreview, updateDoorPreview, placeDoor, clearDoors, doors } from './doors.js';
-import { initializeGrid, drawGrid, toggleCell, clearGrid, grid } from './drawing.js';
+import { initializeGrid, drawGrid, toggleCell, clearGrid, renderGrid, dungeonMapperGrid } from './drawing.js';
 import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
 
 const WALL_COLOR = '#333333';
@@ -15,18 +15,7 @@ let chatMessages = [];
 function loadFromLocalStorage() {
   const savedGrid = JSON.parse(localStorage.getItem('dungeonMapperGrid'));
   if (savedGrid) {
-    grid.length = 0;
-    grid.push(...savedGrid);
-    // Update the visual representation of the grid
-    for (let row = 0; row < grid.length; row++) {
-      for (let col = 0; col < grid[row].length; col++) {
-        const cell = cellLayer.findOne(`#cell-${row}-${col}`);
-        if (cell) {
-          cell.fill(grid[row][col] ? PATH_COLOR : WALL_COLOR);
-        }
-      }
-    }
-    cellLayer.batchDraw();
+    dungeonMapperGrid = new Map(Object.entries(savedGrid));
   }
 
   const savedNotes = JSON.parse(localStorage.getItem('dungeonMapperNotes'));
@@ -47,7 +36,7 @@ function loadFromLocalStorage() {
 
 // Save data to local storage
 function saveToLocalStorage() {
-  localStorage.setItem('dungeonMapperGrid', JSON.stringify(grid));
+  localStorage.setItem('dungeonMapperGrid', JSON.stringify(Object.fromEntries(dungeonMapperGrid)));
   localStorage.setItem('dungeonMapperNotes', JSON.stringify(notes));
   localStorage.setItem('dungeonMapperChatMessages', JSON.stringify(chatMessages));
 }
@@ -101,8 +90,8 @@ function init() {
   // Load saved data from local storage
   loadFromLocalStorage();
 
-  // Redraw the grid based on loaded data
-  redrawGrid();
+  // Render the grid based on loaded data
+  renderGrid(cellLayer, CELL_SIZE);
   // Display loaded chat messages
   displayLoadedChatMessages();
   
@@ -166,17 +155,17 @@ function handleStageMouseDown(e) {
     startSelection(snappedPos, selectionLayer, CELL_SIZE);
   } else if (state.currentTool === 'pen') {
     state.isDrawing = true;
-    const row = Math.floor(snappedPos.y / CELL_SIZE);
-    const col = Math.floor(snappedPos.x / CELL_SIZE);
-    initialCellState = grid[row][col];
-    setCell(row, col, 1 - initialCellState, cellLayer);
+    const x = Math.floor(snappedPos.x / CELL_SIZE);
+    const y = Math.floor(snappedPos.y / CELL_SIZE);
+    initialCellState = dungeonMapperGrid.get(`${x},${y}`) || 0;
+    toggleCell(x, y, cellLayer, CELL_SIZE);
   } else if (state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') {
     state.isDrawing = true;
     state.startPos = snappedPos;
   } else if (state.currentTool === 'notes') {
-    const row = Math.floor(snappedPos.y / CELL_SIZE);
-    const col = Math.floor(snappedPos.x / CELL_SIZE);
-    openNoteEditor(row, col);
+    const x = Math.floor(snappedPos.x / CELL_SIZE);
+    const y = Math.floor(snappedPos.y / CELL_SIZE);
+    openNoteEditor(x, y);
   }
 }
 

@@ -5,30 +5,11 @@ import { snapToGrid } from './utils.js';
 const WALL_COLOR = '#333333';
 const PATH_COLOR = '#ffffff';
 
-let grid = [];
+let dungeonMapperGrid = new Map();
 
 function initializeGrid(stage, cellLayer, CELL_SIZE) {
-  const rows = Math.floor(stage.height() / CELL_SIZE);
-  const cols = Math.floor(stage.width() / CELL_SIZE);
-  
-  for (let i = 0; i < rows; i++) {
-    grid[i] = new Array(cols).fill(0);  // 0 represents walls (dark gray)
-  }
-  
-  // Draw initial dark gray grid
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      const cellRect = new Konva.Rect({
-        x: col * CELL_SIZE,
-        y: row * CELL_SIZE,
-        width: CELL_SIZE,
-        height: CELL_SIZE,
-        fill: WALL_COLOR,
-        id: `cell-${row}-${col}`,
-      });
-      cellLayer.add(cellRect);
-    }
-  }
+  // We don't need to pre-initialize the grid anymore
+  // The grid will be populated as cells are modified
   cellLayer.draw();
 }
 
@@ -54,25 +35,50 @@ function drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR) {
   gridLayer.draw();
 }
 
-function toggleCell(row, col, cellLayer) {
-  if (row >= 0 && row < grid.length && col >= 0 && col < grid[0].length) {
-    grid[row][col] = 1 - grid[row][col];  // Toggle between 0 (wall) and 1 (path)
-    const cell = cellLayer.findOne(`#cell-${row}-${col}`);
-    if (cell) {
-      cell.fill(grid[row][col] ? PATH_COLOR : WALL_COLOR);
-      cellLayer.batchDraw();
-    }
+function toggleCell(x, y, cellLayer, CELL_SIZE) {
+  const key = `${x},${y}`;
+  const currentValue = dungeonMapperGrid.get(key) || 0;
+  const newValue = 1 - currentValue;
+  dungeonMapperGrid.set(key, newValue);
+
+  const cell = cellLayer.findOne(`#cell-${x}-${y}`);
+  if (cell) {
+    cell.fill(newValue ? PATH_COLOR : WALL_COLOR);
+  } else {
+    const newCell = new Konva.Rect({
+      x: x * CELL_SIZE,
+      y: y * CELL_SIZE,
+      width: CELL_SIZE,
+      height: CELL_SIZE,
+      fill: newValue ? PATH_COLOR : WALL_COLOR,
+      id: `cell-${x}-${y}`,
+    });
+    cellLayer.add(newCell);
   }
+  cellLayer.batchDraw();
 }
 
 function clearGrid(cellLayer) {
-  for (let i = 0; i < grid.length; i++) {
-    grid[i].fill(0);
-  }
-  cellLayer.getChildren().forEach(child => {
-    child.fill(WALL_COLOR);
-  });
+  dungeonMapperGrid.clear();
+  cellLayer.destroyChildren();
   cellLayer.draw();
 }
 
-export { initializeGrid, drawGrid, toggleCell, clearGrid, grid };
+function renderGrid(cellLayer, CELL_SIZE) {
+  cellLayer.destroyChildren();
+  for (const [key, value] of dungeonMapperGrid) {
+    const [x, y] = key.split(',').map(Number);
+    const cell = new Konva.Rect({
+      x: x * CELL_SIZE,
+      y: y * CELL_SIZE,
+      width: CELL_SIZE,
+      height: CELL_SIZE,
+      fill: value ? PATH_COLOR : WALL_COLOR,
+      id: `cell-${x}-${y}`,
+    });
+    cellLayer.add(cell);
+  }
+  cellLayer.batchDraw();
+}
+
+export { initializeGrid, drawGrid, toggleCell, clearGrid, renderGrid, dungeonMapperGrid };
