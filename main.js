@@ -221,6 +221,12 @@ function closeNoteEditor() {
   currentNote = null;
 }
 
+// Add event listeners for the note editor buttons
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('save-note').addEventListener('click', saveNote);
+  document.getElementById('cancel-note').addEventListener('click', closeNoteEditor);
+});
+
 function highlightNoteCell(row, col) {
   const cell = cellLayer.findOne(`#cell-${row}-${col}`);
   if (cell) {
