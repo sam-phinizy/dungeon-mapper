@@ -32,6 +32,7 @@ function loadFromLocalStorage() {
   if (savedChatMessages) {
     chatMessages = savedChatMessages;
   }
+  saveToLocalStorage(); // Save the updated grid to localStorage
 }
 
 // Save data to local storage
