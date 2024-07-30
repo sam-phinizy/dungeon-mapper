@@ -258,6 +258,39 @@ function handleDragStart(e, roomName) {
   e.dataTransfer.setData('text/plain', roomName);
   draggedRoom = JSON.parse(localStorage.getItem(roomName));
   createGhostPreview(draggedRoom, stage.getPointerPosition());
+  
+  // Add event listeners for drag and drop on the stage
+  stage.on('dragover', handleDragOver);
+  stage.on('drop', handleDrop);
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const pos = stage.getPointerPosition();
+  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
+  placeRoom(draggedRoom, snappedPos);
+  
+  // Remove the ghost preview
+  if (ghostPreview) {
+    ghostPreview.destroy();
+    ghostPreview = null;
+  }
+  
+  // Clear the draggedRoom
+  draggedRoom = null;
+  
+  // Remove the drag and drop event listeners
+  stage.off('dragover');
+  stage.off('drop');
+  
+  // Redraw the layers
+  cellLayer.batchDraw();
+  doorLayer.batchDraw();
+  previewLayer.batchDraw();
 }
 
 function createGhostPreview(roomData, pos) {
@@ -348,6 +381,57 @@ function placeRoom(roomData, pos) {
 
   cellLayer.batchDraw();
   doorLayer.batchDraw();
+}
+
+function createGhostPreview(roomData, pos) {
+  ghostPreview = new Konva.Group({
+    x: pos.x,
+    y: pos.y,
+    opacity: 0.5,
+    draggable: true,
+  });
+
+  if (roomData.cells && Array.isArray(roomData.cells)) {
+    roomData.cells.forEach(cell => {
+      const rect = new Konva.Rect({
+        x: cell.col * CELL_SIZE,
+        y: cell.row * CELL_SIZE,
+        width: CELL_SIZE,
+        height: CELL_SIZE,
+        fill: cell.state ? '#ffffff' : '#333333',
+      });
+      ghostPreview.add(rect);
+    });
+  }
+
+  if (roomData.doors && Array.isArray(roomData.doors)) {
+    roomData.doors.forEach(door => {
+      const line = new Konva.Line({
+        points: [door.startX, door.startY, door.endX, door.endY],
+        stroke: '#8B4513',
+        strokeWidth: 3
+      });
+      ghostPreview.add(line);
+    });
+  }
+
+  previewLayer.add(ghostPreview);
+  previewLayer.batchDraw();
+
+  // Add event listeners for dragging the ghost preview
+  ghostPreview.on('dragmove', () => {
+    const pos = ghostPreview.position();
+    const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
+    ghostPreview.position(snappedPos);
+  });
+
+  ghostPreview.on('dragend', () => {
+    const pos = ghostPreview.position();
+    placeRoom(roomData, pos);
+    ghostPreview.destroy();
+    ghostPreview = null;
+    previewLayer.batchDraw();
+  });
 }
 
 function loadRoom(roomName) {
