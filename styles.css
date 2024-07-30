@@ -74,9 +74,25 @@ body {
 .content {
     display: flex;
     position: relative;
+    height: calc(100vh - 50px); /* Adjust based on your navbar height */
 }
 
 #canvas-container {
     flex: 1;
     background-color: white;
+    overflow: hidden;
+}
+
+#sidebar-resizer {
+    width: 5px;
+    background-color: #ccc;
+    cursor: col-resize;
+}
+
+#sidebar {
+    width: 25%;
+    background-color: #f8f8f8;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
 }

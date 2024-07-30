@@ -60,7 +60,9 @@ function init() {
 }
 
 function handleResize() {
-  const newWidth = calculateAvailableWidth();
+  const sidebar = document.getElementById('sidebar');
+  const resizer = document.getElementById('sidebar-resizer');
+  const newWidth = calculateAvailableWidth() - sidebar.offsetWidth - resizer.offsetWidth;
   const newHeight = window.innerHeight - 100; // Adjust for navbar height
   stage.width(newWidth);
   stage.height(newHeight);
@@ -160,5 +162,32 @@ document.addEventListener('DOMContentLoaded', () => {
   const saveRoomButton = document.getElementById('saveRoom');
   if (saveRoomButton) {
     saveRoomButton.remove();
+  }
+
+  // Sidebar resizing functionality
+  const resizer = document.getElementById('sidebar-resizer');
+  const sidebar = document.getElementById('sidebar');
+  const canvasContainer = document.getElementById('canvas-container');
+
+  let isResizing = false;
+
+  resizer.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopResize);
+  });
+
+  function handleMouseMove(e) {
+    if (!isResizing) return;
+    const containerWidth = document.querySelector('.content').offsetWidth;
+    const newWidth = containerWidth - e.clientX;
+    sidebar.style.width = `${newWidth}px`;
+    canvasContainer.style.width = `${containerWidth - newWidth - 5}px`; // 5px for resizer width
+    handleResize(); // Update canvas size
+  }
+
+  function stopResize() {
+    isResizing = false;
+    document.removeEventListener('mousemove', handleMouseMove);
   }
 });
