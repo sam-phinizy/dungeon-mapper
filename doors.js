@@ -18,14 +18,25 @@ function initializeDoorPreview(layer) {
   
   const previewLine = new Konva.Line({
     stroke: DOOR_PREVIEW_COLOR,
-    strokeWidth: 3
+    strokeWidth: 3,
+    points: [0, 0, 0, 0] // Initialize with default points
   });
   
   doorPreview.add(previewLine);
   previewLayer.add(doorPreview);
 }
 
+// Add this function to ensure doorPreview is always valid
+function ensureValidDoorPreview() {
+  if (!doorPreview || !doorPreview.findOne('Line')) {
+    console.warn('Door preview not properly initialized. Reinitializing...');
+    initializeDoorPreview(previewLayer);
+  }
+}
+
 function updateDoorPreview(pos, CELL_SIZE, state) {
+  ensureValidDoorPreview();
+
   if (state.currentTool !== 'door') {
     doorPreview.visible(false);
     previewLayer.batchDraw();
@@ -59,10 +70,14 @@ function updateDoorPreview(pos, CELL_SIZE, state) {
     endPoint = { x: snappedPos.x + CELL_SIZE, y: snappedPos.y + CELL_SIZE };
   }
 
-  
-  doorPreview.findOne('Line').points([startPoint.x, startPoint.y, endPoint.x, endPoint.y]);
-doorPreview.visible(true);
-  previewLayer.batchDraw();
+  const previewLine = doorPreview.findOne('Line');
+  if (previewLine) {
+    previewLine.points([startPoint.x, startPoint.y, endPoint.x, endPoint.y]);
+    doorPreview.visible(true);
+    previewLayer.batchDraw();
+  } else {
+    console.error('Preview line not found in doorPreview');
+  }
 }
 
 function placeDoor(doorLayer) {
