@@ -22,8 +22,8 @@ function initializeDoorPreview(layer) {
   
   const previewRect = new Konva.Rect({
     fill: DOOR_PREVIEW_COLOR,
-    width: 6,
-    height: 6
+    width: 100, // increased width to show whole note
+    height: 20  // increased height to show whole note
   });
   
   doorPreview.add(previewLine);
