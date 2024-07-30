@@ -219,8 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   chatSend.addEventListener('click', handleSendMessage);
-  chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
       handleSendMessage();
     }
   });
