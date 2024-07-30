@@ -7,7 +7,8 @@ import { startSelection, updateSelection, endSelection, getSelectedCells, clearS
 
 function calculateAvailableWidth() {
   const totalWidth = window.innerWidth;
-  const libraryWidth = document.getElementById('saved-rooms').offsetWidth;
+  const savedRoomsElement = document.getElementById('saved-rooms');
+  const libraryWidth = savedRoomsElement ? savedRoomsElement.offsetWidth : 0;
   return totalWidth - libraryWidth;
 }
 
