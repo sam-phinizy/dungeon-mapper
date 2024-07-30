@@ -244,12 +244,15 @@ init();
 import { makeDraggable } from './draggable.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Make the floating tools window draggable
+  // Make the floating tools window draggable by its title bar
   const floatingTools = document.getElementById('floating-tools');
-  makeDraggable(floatingTools);
+  const floatingToolsHandle = floatingTools.querySelector('.window-title');
+  makeDraggable(floatingTools, floatingToolsHandle);
 
+  // Make the note editor draggable by its title bar
   const noteEditor = document.getElementById('note-editor');
-  makeDraggable(noteEditor);
+  const noteEditorHandle = noteEditor.querySelector('.window-title');
+  makeDraggable(noteEditor, noteEditorHandle);
 
   // Remove 'saveRoom' button event listener if it exists
   const saveRoomButton = document.getElementById('saveRoom');
