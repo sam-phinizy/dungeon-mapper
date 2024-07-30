@@ -68,7 +68,6 @@ function placeDoor(doorLayer) {
   if (!doorPreview.visible()) return;
   
   const line = doorPreview.findOne('Line');
-  const rect = doorPreview.findOne('Rect');
   
   const newDoor = new Konva.Group();
   
@@ -78,16 +77,7 @@ function placeDoor(doorLayer) {
     strokeWidth: 3
   });
   
-  const doorRect = new Konva.Rect({
-    x: rect.x(),
-    y: rect.y(),
-    width: 6,
-    height: 6,
-    fill: DOOR_COLOR
-  });
-  
   newDoor.add(doorLine);
-  newDoor.add(doorRect);
   doorLayer.add(newDoor);
   doorLayer.batchDraw();
   
