@@ -225,11 +225,17 @@ function showNotePopover(row, col, pos) {
 function setCell(row, col, state, cellLayer) {
   if (row >= 0 && row < grid.length && col >= 0 && col < grid[0].length) {
     grid[row][col] = state;
-    const cellRect = cellLayer.findOne(`#cell-${row}-${col}`);
-    if (cellRect) {
-      cellRect.fill(state ? '#ffffff' : '#333333');
-      cellLayer.batchDraw();
-    }
+    const x = col * CELL_SIZE;
+    const y = row * CELL_SIZE;
+    const rect = new Konva.Rect({
+      x: x,
+      y: y,
+      width: CELL_SIZE,
+      height: CELL_SIZE,
+      fill: state ? PATH_COLOR : WALL_COLOR,
+    });
+    cellLayer.add(rect);
+    cellLayer.batchDraw();
     saveToLocalStorage();
   }
 }
@@ -304,9 +310,26 @@ function drawShape(startPos, endPos) {
   const endCol = Math.floor(endPos.x / CELL_SIZE);
   
   if (state.currentTool === 'rect') {
+    const x = Math.min(startPos.x, endPos.x);
+    const y = Math.min(startPos.y, endPos.y);
+    const width = Math.abs(endPos.x - startPos.x) + CELL_SIZE;
+    const height = Math.abs(endPos.y - startPos.y) + CELL_SIZE;
+    
+    const rect = new Konva.Rect({
+      x: x,
+      y: y,
+      width: width,
+      height: height,
+      fill: PATH_COLOR,
+    });
+    
+    cellLayer.add(rect);
+    cellLayer.batchDraw();
+    
+    // Update the grid data structure
     for (let row = Math.min(startRow, endRow); row <= Math.max(startRow, endRow); row++) {
       for (let col = Math.min(startCol, endCol); col <= Math.max(startCol, endCol); col++) {
-        setCell(row, col, 1, cellLayer);
+        grid[row][col] = 1;
       }
     }
   } else if (state.currentTool === 'circle') {
