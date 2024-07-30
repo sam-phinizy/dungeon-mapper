@@ -6,16 +6,13 @@ import { initializeGrid, drawGrid, toggleCell, clearGrid, grid } from './drawing
 import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
 
 function calculateAvailableWidth() {
-  const totalWidth = window.innerWidth;
-  const savedRoomsElement = document.getElementById('saved-rooms');
-  const libraryWidth = savedRoomsElement ? savedRoomsElement.offsetWidth : 0;
-  return totalWidth - libraryWidth;
+  return window.innerWidth;
 }
 
 const stage = new Konva.Stage({
   container: 'canvas-container',
   width: calculateAvailableWidth(),
-  height: window.innerHeight - 100, // Adjust for navbar height
+  height: window.innerHeight, // Use full height
 });
 
 const gridLayer = new Konva.Layer();
