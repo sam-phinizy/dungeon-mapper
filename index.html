@@ -79,6 +79,12 @@
                 <button id="notesTool" class="tool-button">Notes</button>
             </div>
         </div>
+        <div id="note-editor" style="display: none; position: absolute; background-color: white; padding: 10px; border: 1px solid black;">
+            <textarea id="note-text" rows="4" cols="50"></textarea>
+            <br>
+            <button onclick="saveNote()">Save</button>
+            <button onclick="closeNoteEditor()">Cancel</button>
+        </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script type="module" src="main.js"></script>

@@ -5,6 +5,9 @@ import { initializeDoorPreview, updateDoorPreview, placeDoor, clearDoors, doors 
 import { initializeGrid, drawGrid, toggleCell, clearGrid, grid } from './drawing.js';
 import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
 
+let notes = {};
+let currentNote = null;
+
 function calculateAvailableWidth() {
   return window.innerWidth;
 }
@@ -53,6 +56,10 @@ function init() {
   document.getElementById('drawTool').addEventListener('click', () => setTool('draw'));
   document.getElementById('selectTool').addEventListener('click', () => setTool('select'));
   document.getElementById('doorTool').addEventListener('click', () => setTool('door'));
+  document.getElementById('notesTool').addEventListener('click', () => setTool('notes'));
+  
+  document.getElementById('note-editor').querySelector('button:first-of-type').addEventListener('click', saveNote);
+  document.getElementById('note-editor').querySelector('button:last-of-type').addEventListener('click', closeNoteEditor);
   
   window.addEventListener('resize', handleResize);
   
@@ -107,6 +114,10 @@ function handleStageMouseDown(e) {
     const col = Math.floor(snappedPos.x / CELL_SIZE);
     initialCellState = grid[row][col];
     setCell(row, col, 1 - initialCellState, cellLayer);
+  } else if (state.currentTool === 'notes') {
+    const row = Math.floor(snappedPos.y / CELL_SIZE);
+    const col = Math.floor(snappedPos.x / CELL_SIZE);
+    openNoteEditor(row, col);
   }
 }
 
@@ -149,6 +160,7 @@ function setTool(tool) {
   document.getElementById('drawTool').classList.toggle('active-tool', tool === 'draw');
   document.getElementById('selectTool').classList.toggle('active-tool', tool === 'select');
   document.getElementById('doorTool').classList.toggle('active-tool', tool === 'door');
+  document.getElementById('notesTool').classList.toggle('active-tool', tool === 'notes');
   
   if (tool !== 'select') {
     clearSelection(selectionLayer);
@@ -156,6 +168,41 @@ function setTool(tool) {
   
   if (tool !== 'door') {
     updateDoorPreview({ x: -1, y: -1 }, CELL_SIZE, state); // Hide door preview
+  }
+}
+
+function openNoteEditor(row, col) {
+  const noteEditor = document.getElementById('note-editor');
+  noteEditor.style.display = 'block';
+  
+  const noteText = document.getElementById('note-text');
+  const key = `${row}-${col}`;
+  currentNote = { row, col };
+  noteText.value = notes[key] || '';
+  noteText.focus();
+}
+
+function saveNote() {
+  if (currentNote) {
+    const noteText = document.getElementById('note-text').value;
+    const key = `${currentNote.row}-${currentNote.col}`;
+    notes[key] = noteText;
+    highlightNoteCell(currentNote.row, currentNote.col);
+    closeNoteEditor();
+  }
+}
+
+function closeNoteEditor() {
+  const noteEditor = document.getElementById('note-editor');
+  noteEditor.style.display = 'none';
+  currentNote = null;
+}
+
+function highlightNoteCell(row, col) {
+  const cell = cellLayer.findOne(`#cell-${row}-${col}`);
+  if (cell) {
+    cell.fill('orange');
+    cellLayer.batchDraw();
   }
 }
 
