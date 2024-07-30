@@ -405,13 +405,8 @@ init();
 // Add this near the top of the file, after other imports
 import { makeDraggable } from './draggable.js';
 
-// Add this to the init function or wherever you initialize your app
-function init() {
-  // ... existing code ...
-
+document.addEventListener('DOMContentLoaded', () => {
   // Make the floating tools window draggable
   const floatingTools = document.getElementById('floating-tools');
   makeDraggable(floatingTools);
-
-  // ... rest of the init function ...
-}
+});
