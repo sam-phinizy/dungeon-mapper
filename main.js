@@ -201,7 +201,8 @@ function closeNoteEditor() {
 function highlightNoteCell(row, col) {
   const cell = cellLayer.findOne(`#cell-${row}-${col}`);
   if (cell) {
-    cell.fill('orange');
+    cell.stroke('orange');
+    cell.strokeWidth(2);
     cellLayer.batchDraw();
   }
 }
