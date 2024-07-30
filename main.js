@@ -5,8 +5,8 @@ import { initializeDoorPreview, updateDoorPreview, placeDoor, clearDoors, doors 
 import { initializeGrid, drawGrid, toggleCell, clearGrid, renderGrid, dungeonMapperGrid } from './drawing.js';
 import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
 
-const WALL_COLOR = '#333333';
-const PATH_COLOR = '#ffffff';
+const WALL_COLOR = '#1a1a1a';
+const PATH_COLOR = '#1a1a1a';
 
 let notes = {};
 let chatMessages = [];
