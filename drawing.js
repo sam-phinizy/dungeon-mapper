@@ -5,7 +5,7 @@ import { snapToGrid } from './utils.js';
 const WALL_COLOR = '#1a1a1a';  // Dark gray color
 const PATH_COLOR = '#ffffff';
 
-let dungeonMapperGrid = new Map();
+const dungeonMapperGrid = new Map();
 
 function initializeGrid(stage, cellLayer, CELL_SIZE) {
   // We don't need to pre-initialize the grid anymore
