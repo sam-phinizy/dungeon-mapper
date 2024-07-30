@@ -2,7 +2,7 @@
 
 import { snapToGrid } from './utils.js';
 
-const WALL_COLOR = '#333333';
+const WALL_COLOR = '#1a1a1a';  // Dark gray color
 const PATH_COLOR = '#ffffff';
 
 let dungeonMapperGrid = new Map();
