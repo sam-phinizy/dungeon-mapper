@@ -248,6 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const floatingTools = document.getElementById('floating-tools');
   makeDraggable(floatingTools);
 
+  const noteEditor = document.getElementById('note-editor');
+  makeDraggable(noteEditor);
+
   // Remove 'saveRoom' button event listener if it exists
   const saveRoomButton = document.getElementById('saveRoom');
   if (saveRoomButton) {
@@ -294,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }
 
-  function handleSendMessage() {
+function handleSendMessage() {
     const message = chatInput.value.trim();
     if (message) {
       addMessage(message);
