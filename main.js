@@ -14,7 +14,7 @@ function calculateAvailableWidth() {
 const stage = new Konva.Stage({
   container: 'canvas-container',
   width: calculateAvailableWidth(),
-  height: 600,
+  height: window.innerHeight - 100, // Adjust for navbar height
 });
 
 const gridLayer = new Konva.Layer();
@@ -67,12 +67,19 @@ function init() {
 
 function handleResize() {
   const newWidth = calculateAvailableWidth();
+  const newHeight = window.innerHeight - 100; // Adjust for navbar height
   stage.width(newWidth);
+  stage.height(newHeight);
   gridLayer.width(newWidth);
+  gridLayer.height(newHeight);
   cellLayer.width(newWidth);
+  cellLayer.height(newHeight);
   doorLayer.width(newWidth);
+  doorLayer.height(newHeight);
   selectionLayer.width(newWidth);
+  selectionLayer.height(newHeight);
   previewLayer.width(newWidth);
+  previewLayer.height(newHeight);
   
   drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
   stage.batchDraw();

@@ -62,4 +62,29 @@
     </div>
     <script type="module" src="main.js"></script>
 </body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DungeonMapper</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://unpkg.com/konva@8.3.13/konva.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">DungeonMapper</div>
+        <div class="navbar-tools">
+            <button id="drawTool" class="tool-button">Draw</button>
+            <button id="selectTool" class="tool-button">Select</button>
+            <button id="doorTool" class="tool-button">Door</button>
+            <button id="saveRoom" class="tool-button">Save Room</button>
+        </div>
+    </nav>
+    <div class="content">
+        <div id="canvas-container"></div>
+        <div id="saved-rooms" class="room-library"></div>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
 </html>
