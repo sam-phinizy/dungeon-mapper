@@ -26,17 +26,17 @@ function handleStageMouseDown(e, stage, state) {
   }
 
   const pos = stage.getPointerPosition();
-  const snappedPos = snapToGrid(pos.x, pos.y, stage.CELL_SIZE);
+  const snappedPos = snapToGrid(pos.x, pos.y, state.CELL_SIZE);
 
   if (state.currentTool === 'door') {
-    placeDoor(stage.doorLayer);
+    placeDoor(stage.findOne('.doorLayer'));
   } else if (state.currentTool === 'select') {
-    startSelection(snappedPos, stage.selectionLayer, stage.CELL_SIZE);
+    startSelection(snappedPos, stage.findOne('.selectionLayer'), state.CELL_SIZE);
   } else if (state.currentTool === 'draw') {
     state.isDrawing = true;
-    const row = Math.floor(snappedPos.y / stage.CELL_SIZE);
-    const col = Math.floor(snappedPos.x / stage.CELL_SIZE);
-    toggleCell(row, col, stage.cellLayer);
+    const row = Math.floor(snappedPos.y / state.CELL_SIZE);
+    const col = Math.floor(snappedPos.x / state.CELL_SIZE);
+    toggleCell(row, col, stage.findOne('.cellLayer'));
   }
 }
 
@@ -46,14 +46,14 @@ function handleStageMouseMove(e, stage, state) {
   const pos = stage.getPointerPosition();
 
   if (state.currentTool === 'door') {
-    updateDoorPreview(pos, stage.CELL_SIZE, state);
+    updateDoorPreview(pos, state.CELL_SIZE, state);
   } else if (state.currentTool === 'select') {
-    updateSelection(pos, stage.CELL_SIZE);
+    updateSelection(pos, state.CELL_SIZE);
   } else if (state.currentTool === 'draw' && state.isDrawing) {
-    const snappedPos = snapToGrid(pos.x, pos.y, stage.CELL_SIZE);
-    const row = Math.floor(snappedPos.y / stage.CELL_SIZE);
-    const col = Math.floor(snappedPos.x / stage.CELL_SIZE);
-    toggleCell(row, col, stage.cellLayer);
+    const snappedPos = snapToGrid(pos.x, pos.y, state.CELL_SIZE);
+    const row = Math.floor(snappedPos.y / state.CELL_SIZE);
+    const col = Math.floor(snappedPos.x / state.CELL_SIZE);
+    toggleCell(row, col, stage.findOne('.cellLayer'));
   }
 }
 
