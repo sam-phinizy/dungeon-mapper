@@ -8,6 +8,7 @@ import { startSelection, updateSelection, endSelection, getSelectedCells, clearS
 const WALL_COLOR = '#1a1a1a';
 const PATH_COLOR = '#1a1a1a';
 
+let dungeonMapperGrid = new Map();
 let notes = {};
 let chatMessages = [];
 
@@ -15,7 +16,10 @@ let chatMessages = [];
 function loadFromLocalStorage() {
   const savedGrid = JSON.parse(localStorage.getItem('dungeonMapperGrid'));
   if (savedGrid) {
-    dungeonMapperGrid = new Map(Object.entries(savedGrid));
+    dungeonMapperGrid.clear();
+    Object.entries(savedGrid).forEach(([key, value]) => {
+      dungeonMapperGrid.set(key, value);
+    });
   }
 
   const savedNotes = JSON.parse(localStorage.getItem('dungeonMapperNotes'));
