@@ -77,15 +77,45 @@ function placeDoor(doorLayer) {
     strokeWidth: 3
   });
   
+  // Calculate the middle point and direction of the door
+  const startX = line.points()[0];
+  const startY = line.points()[1];
+  const endX = line.points()[2];
+  const endY = line.points()[3];
+  const midX = (startX + endX) / 2;
+  const midY = (startY + endY) / 2;
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  
+  // Calculate the rectangle dimensions
+  const rectWidth = CELL_SIZE * 0.5;
+  const rectHeight = length * 0.75;  // 3/4 of the door length
+  
+  // Calculate the rectangle position and rotation
+  const angle = Math.atan2(dy, dx);
+  const rectX = midX - rectWidth / 2 * Math.cos(angle) + rectHeight / 2 * Math.sin(angle);
+  const rectY = midY - rectWidth / 2 * Math.sin(angle) - rectHeight / 2 * Math.cos(angle);
+  
+  const doorRect = new Konva.Rect({
+    x: rectX,
+    y: rectY,
+    width: rectWidth,
+    height: rectHeight,
+    fill: DOOR_COLOR,
+    rotation: angle * 180 / Math.PI
+  });
+  
   newDoor.add(doorLine);
+  newDoor.add(doorRect);
   doorLayer.add(newDoor);
   doorLayer.batchDraw();
   
   doors.push({
-    startX: line.points()[0],
-    startY: line.points()[1],
-    endX: line.points()[2],
-    endY: line.points()[3]
+    startX: startX,
+    startY: startY,
+    endX: endX,
+    endY: endY
   });
 }
 
