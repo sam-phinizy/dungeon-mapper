@@ -48,15 +48,11 @@ function init() {
   initializeGrid(stage, cellLayer, CELL_SIZE);
   drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
   initializeDoorPreview(previewLayer);
-  updateRoomLibrary();
   
   stage.on('mousedown touchstart', handleStageMouseDown);
   stage.on('mousemove touchmove', handleStageMouseMove);
   stage.on('mouseup touchend', handleStageMouseUp);
-  stage.on('dragmove', handleDragMove);
-  stage.on('dragend', handleDragEnd);
   
-  document.getElementById('saveRoom').addEventListener('click', saveRoom);
   document.getElementById('drawTool').addEventListener('click', () => setTool('draw'));
   document.getElementById('selectTool').addEventListener('click', () => setTool('select'));
   document.getElementById('doorTool').addEventListener('click', () => setTool('door'));
@@ -188,4 +184,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Make the floating tools window draggable
   const floatingTools = document.getElementById('floating-tools');
   makeDraggable(floatingTools);
+
+  // Remove 'saveRoom' button event listener if it exists
+  const saveRoomButton = document.getElementById('saveRoom');
+  if (saveRoomButton) {
+    saveRoomButton.remove();
+  }
 });
