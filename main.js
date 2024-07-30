@@ -166,6 +166,9 @@ function handleStageMouseDown(e) {
   } else if (state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') {
     state.isDrawing = true;
     state.startPos = snappedPos;
+    const x = Math.floor(snappedPos.x / CELL_SIZE);
+    const y = Math.floor(snappedPos.y / CELL_SIZE);
+    initialCellState = dungeonMapperGrid.get(`${x},${y}`) || 0;
   } else if (state.currentTool === 'notes') {
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
@@ -317,7 +320,7 @@ function drawShape(startPos, endPos) {
       y: y,
       width: width,
       height: height,
-      fill: PATH_COLOR,
+      fill: initialCellState ? WALL_COLOR : PATH_COLOR,
     });
     
     cellLayer.add(rect);
