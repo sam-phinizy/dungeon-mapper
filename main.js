@@ -6,7 +6,7 @@ import { initializeGrid, drawGrid, toggleCell, clearGrid, renderGrid, dungeonMap
 import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
 
 const WALL_COLOR = '#1a1a1a';
-const PATH_COLOR = '#1a1a1a';
+const PATH_COLOR = '#ffffff';
 
 let notes = {};
 let chatMessages = [];
@@ -161,14 +161,14 @@ function handleStageMouseDown(e) {
     state.isDrawing = true;
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
-    initialCellState = dungeonMapperGrid.get(`${x},${y}`) || 0;
+    initialCellState = dungeonMapperGrid.get(`${x},${y}`) || 1;
     toggleCell(x, y, cellLayer, CELL_SIZE);
   } else if (state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') {
     state.isDrawing = true;
     state.startPos = snappedPos;
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
-    initialCellState = dungeonMapperGrid.get(`${x},${y}`) || 0;
+    initialCellState = dungeonMapperGrid.get(`${x},${y}`) || 1;
   } else if (state.currentTool === 'notes') {
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
@@ -320,7 +320,7 @@ function drawShape(startPos, endPos) {
       y: y,
       width: width,
       height: height,
-      fill: initialCellState ? WALL_COLOR : PATH_COLOR,
+      fill: initialCellState ? PATH_COLOR : WALL_COLOR,
     });
     
     cellLayer.add(rect);
@@ -371,7 +371,7 @@ function drawShape(startPos, endPos) {
         y: row * CELL_SIZE,
         width: CELL_SIZE,
         height: CELL_SIZE,
-        fill: initialCellState ? WALL_COLOR : PATH_COLOR,
+        fill: initialCellState ? PATH_COLOR : WALL_COLOR,
       });
       cellLayer.add(cell);
       

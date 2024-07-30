@@ -39,7 +39,13 @@ function toggleCell(x, y, cellLayer, CELL_SIZE) {
   const key = `${x},${y}`;
   const currentValue = dungeonMapperGrid.get(key) || 0;
   const newValue = 1 - currentValue;
-  dungeonMapperGrid.set(key, newValue);
+  // if cell is already in the grid just pop it
+  if (dungeonMapperGrid.has(key)) {
+    dungeonMapperGrid.delete(key);
+  } else {
+    dungeonMapperGrid.set(key, newValue);
+
+  }
 
   const cell = cellLayer.findOne(`#cell-${x}-${y}`);
   if (cell) {
