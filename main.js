@@ -6,6 +6,33 @@ import { initializeGrid, drawGrid, toggleCell, clearGrid, grid } from './drawing
 import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
 
 let notes = {};
+let chatMessages = [];
+
+// Load saved data from local storage
+function loadFromLocalStorage() {
+  const savedGrid = JSON.parse(localStorage.getItem('dungeonMapperGrid'));
+  if (savedGrid) {
+    grid.length = 0;
+    grid.push(...savedGrid);
+  }
+
+  const savedNotes = JSON.parse(localStorage.getItem('dungeonMapperNotes'));
+  if (savedNotes) {
+    notes = savedNotes;
+  }
+
+  const savedChatMessages = JSON.parse(localStorage.getItem('dungeonMapperChatMessages'));
+  if (savedChatMessages) {
+    chatMessages = savedChatMessages;
+  }
+}
+
+// Save data to local storage
+function saveToLocalStorage() {
+  localStorage.setItem('dungeonMapperGrid', JSON.stringify(grid));
+  localStorage.setItem('dungeonMapperNotes', JSON.stringify(notes));
+  localStorage.setItem('dungeonMapperChatMessages', JSON.stringify(chatMessages));
+}
 let currentNote = null;
 
 function calculateAvailableWidth() {
@@ -45,6 +72,7 @@ let draggedRoom = null;
 let ghostPreview = null;
 
 function init() {
+  loadFromLocalStorage();
   initializeGrid(stage, cellLayer, CELL_SIZE);
   drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
   initializeDoorPreview(previewLayer);
@@ -52,6 +80,11 @@ function init() {
   stage.on('mousedown touchstart', handleStageMouseDown);
   stage.on('mousemove touchmove', handleStageMouseMove);
   stage.on('mouseup touchend', handleStageMouseUp);
+
+  // Redraw the grid based on loaded data
+  redrawGrid();
+  // Display loaded chat messages
+  displayLoadedChatMessages();
   
   document.getElementById('penTool').addEventListener('click', () => setTool('pen'));
   document.getElementById('rectTool').addEventListener('click', () => setTool('rect'));
@@ -177,6 +210,7 @@ function setCell(row, col, state, cellLayer) {
       cellRect.fill(state ? '#ffffff' : '#333333');
       cellLayer.batchDraw();
     }
+    saveToLocalStorage();
   }
 }
 
@@ -330,6 +364,7 @@ function saveNote() {
     notes[key] = noteText;
     highlightNoteCell(currentNote.row, currentNote.col);
     closeNoteEditor();
+    saveToLocalStorage();
   }
 }
 
@@ -344,6 +379,26 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('save-note').addEventListener('click', saveNote);
   document.getElementById('cancel-note').addEventListener('click', closeNoteEditor);
 });
+
+function redrawGrid() {
+  for (let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid[row].length; col++) {
+      const cell = cellLayer.findOne(`#cell-${row}-${col}`);
+      if (cell) {
+        cell.fill(grid[row][col] ? PATH_COLOR : WALL_COLOR);
+      }
+    }
+  }
+  cellLayer.batchDraw();
+}
+
+function displayLoadedChatMessages() {
+  const chatMessagesContainer = document.getElementById('chat-messages');
+  chatMessagesContainer.innerHTML = '';
+  chatMessages.forEach(message => {
+    addMessage(message);
+  });
+}
 
 function highlightNoteCell(row, col) {
   const cell = cellLayer.findOne(`#cell-${row}-${col}`);
@@ -408,6 +463,10 @@ document.addEventListener('DOMContentLoaded', () => {
     messageElement.innerHTML = marked.parse(message);
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Save the message to the chatMessages array
+    chatMessages.push(message);
+    saveToLocalStorage();
   }
 
 function handleSendMessage() {
