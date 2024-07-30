@@ -3,6 +3,7 @@ body {
     margin: 0;
     padding: 0;
     background-color: #f0f0f0;
+    overflow: hidden;
 }
 
 .navbar {
@@ -72,13 +73,10 @@ body {
 
 .content {
     display: flex;
-    padding: 20px;
     position: relative;
 }
 
 #canvas-container {
     flex: 1;
     background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
