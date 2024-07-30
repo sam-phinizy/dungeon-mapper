@@ -84,7 +84,6 @@ let ghostPreview = null;
 
 function init() {
   initializeGrid(stage, cellLayer, CELL_SIZE);
-  drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
   initializeDoorPreview(previewLayer);
   
   stage.on('mousedown touchstart', handleStageMouseDown);

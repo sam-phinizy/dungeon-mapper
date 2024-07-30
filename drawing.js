@@ -14,24 +14,7 @@ function initializeGrid(stage, cellLayer, CELL_SIZE) {
 }
 
 function drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR) {
-  for (let i = 0; i <= stage.width(); i += CELL_SIZE) {
-    const line = new Konva.Line({
-      points: [i, 0, i, stage.height()],
-      stroke: GRID_COLOR,
-      strokeWidth: 1,
-    });
-    gridLayer.add(line);
-  }
-  
-  for (let i = 0; i <= stage.height(); i += CELL_SIZE) {
-    const line = new Konva.Line({
-      points: [0, i, stage.width(), i],
-      stroke: GRID_COLOR,
-      strokeWidth: 1,
-    });
-    gridLayer.add(line);
-  }
-  
+  // Grid lines removed
   gridLayer.draw();
 }
 
