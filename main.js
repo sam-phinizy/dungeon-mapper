@@ -219,21 +219,20 @@ function showNotePopover(row, col, pos) {
 }
 
 function setCell(row, col, state, cellLayer) {
-  if (row >= 0 && row < grid.length && col >= 0 && col < grid[0].length) {
-    grid[row][col] = state;
-    const x = col * CELL_SIZE;
-    const y = row * CELL_SIZE;
-    const rect = new Konva.Rect({
-      x: x,
-      y: y,
-      width: CELL_SIZE,
-      height: CELL_SIZE,
-      fill: state ? PATH_COLOR : WALL_COLOR,
-    });
-    cellLayer.add(rect);
-    cellLayer.batchDraw();
-    saveToLocalStorage();
-  }
+  const key = `${col},${row}`;
+  dungeonMapperGrid.set(key, state);
+  const x = col * CELL_SIZE;
+  const y = row * CELL_SIZE;
+  const rect = new Konva.Rect({
+    x: x,
+    y: y,
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    fill: state ? PATH_COLOR : WALL_COLOR,
+  });
+  cellLayer.add(rect);
+  cellLayer.batchDraw();
+  saveToLocalStorage();
 }
 
 function handleStageMouseUp() {
