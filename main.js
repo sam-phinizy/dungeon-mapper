@@ -247,12 +247,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Make the floating tools window draggable by its title bar
   const floatingTools = document.getElementById('floating-tools');
   const floatingToolsHandle = floatingTools.querySelector('.window-title');
-  makeDraggable( floatingToolsHandle);
+  makeDraggable(floatingTools, floatingToolsHandle);
 
   // Make the note editor draggable by its title bar
   const noteEditor = document.getElementById('note-editor');
   const noteEditorHandle = noteEditor.querySelector('.window-title');
-  makeDraggable( noteEditorHandle);
+  makeDraggable(noteEditor, noteEditorHandle);
 
 
   // Sidebar resizing functionality
