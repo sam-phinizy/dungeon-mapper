@@ -18,13 +18,24 @@ function drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR) {
   gridLayer.draw();
 }
 
-function toggleCell(x, y, cellLayer, CELL_SIZE) {
+function toggleCell(x, y, cellLayer, CELL_SIZE, currentColor) {
+  // if current color is empty then set it to path color
+  // else set it to wall color
+
+
+  if (!currentColor) {
+    currentColor = PATH_COLOR;
+  }
+
   const key = `${x},${y}`;
-  const currentValue = dungeonMapperGrid.get(key);
-  if (currentValue === currentColor) {
+  const currentValue = dungeonMapperGrid.get(key) || 0;
+  const newValue = 1 - currentValue;
+  // if cell is already in the grid just pop it
+  if (dungeonMapperGrid.has(key)) {
     dungeonMapperGrid.delete(key);
   } else {
-    dungeonMapperGrid.set(key, currentColor);
+    dungeonMapperGrid.set(key, newValue);
+
   }
 
   const cell = cellLayer.findOne(`#cell-${x}-${y}`);

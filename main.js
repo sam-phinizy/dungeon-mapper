@@ -1,9 +1,9 @@
 // main.js
 
 import { snapToGrid } from './utils.js';
-import { initializeDoorPreview, updateDoorPreview, placeDoor, clearDoors, doors } from './doors.js';
-import { initializeGrid, drawGrid, toggleCell, clearGrid, renderGrid, dungeonMapperGrid } from './drawing.js';
-import { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection } from './selection.js';
+import { initializeDoorPreview, updateDoorPreview, placeDoor, } from './doors.js';
+import { initializeGrid, drawGrid, toggleCell, renderGrid, dungeonMapperGrid } from './drawing.js';
+import { startSelection, updateSelection, endSelection, clearSelection } from './selection.js';
 
 const WALL_COLOR = '#1a1a1a';
 const PATH_COLOR = '#ffffff';
@@ -168,9 +168,6 @@ function init() {
 }
 
 function handleColorSchemeChange(e) {
-  const isDarkMode = e.matches;
-  const newGridColor = isDarkMode ? '#444444' : '#cccccc';
-  drawGrid(stage, gridLayer, CELL_SIZE, newGridColor);
   stage.batchDraw();
 }
 
@@ -212,7 +209,7 @@ function handleStageMouseDown(e) {
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
     initialCellState = dungeonMapperGrid.get(`${x},${y}`) || 1;
-    toggleCell(x, y, cellLayer, CELL_SIZE);
+    toggleCell(x, y, cellLayer, CELL_SIZE, currentColor);
   } else if (state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') {
     state.isDrawing = true;
     state.startPos = snappedPos;
@@ -324,7 +321,7 @@ function handleStageMouseUp() {
     if (state.isDrawing) {
       if (state.currentTool !== 'pen') {
         const endPos = snapToGrid(stage.getPointerPosition().x, stage.getPointerPosition().y, CELL_SIZE);
-        drawShape(state.startPos, endPos);
+        drawShape(state.startPos, endPos, currentColor);
       }
       state.isDrawing = false;
       state.startPos = null; // Reset startPos
@@ -355,7 +352,7 @@ function setColor(color) {
 }
 
 
-function drawShape(startPos, endPos) {
+function drawShape(startPos, endPos, currentColor) {
   const startCol = Math.floor(startPos.x / CELL_SIZE);
   const startRow = Math.floor(startPos.y / CELL_SIZE);
   const endCol = Math.floor(endPos.x / CELL_SIZE);
@@ -364,7 +361,7 @@ function drawShape(startPos, endPos) {
   if (state.currentTool === 'rect') {
     for (let row = Math.min(startRow, endRow); row <= Math.max(startRow, endRow); row++) {
       for (let col = Math.min(startCol, endCol); col <= Math.max(startCol, endCol); col++) {
-        toggleCell(col, row, cellLayer, CELL_SIZE);
+        toggleCell(col, row, cellLayer, CELL_SIZE, currentColor);
       }
     }
   } else if (state.currentTool === 'circle') {
@@ -375,7 +372,7 @@ function drawShape(startPos, endPos) {
     for (let row = Math.floor(centerRow - radius); row <= Math.ceil(centerRow + radius); row++) {
       for (let col = Math.floor(centerCol - radius); col <= Math.ceil(centerCol + radius); col++) {
         if (Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2) <= Math.pow(radius, 2)) {
-          toggleCell(col, row, cellLayer, CELL_SIZE);
+          toggleCell(col, row, cellLayer, CELL_SIZE, currentColor);
         }
       }
     }
@@ -390,7 +387,7 @@ function drawShape(startPos, endPos) {
     let col = startCol;
 
     while (true) {
-      toggleCell(col, row, cellLayer, CELL_SIZE);
+      toggleCell(col, row, cellLayer, CELL_SIZE, currentColor);
 
       if (row === endRow && col === endCol) break;
       const e2 = 2 * err;
