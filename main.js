@@ -7,6 +7,7 @@ import { startSelection, updateSelection, endSelection, getSelectedCells, clearS
 
 const WALL_COLOR = '#1a1a1a';
 const PATH_COLOR = '#ffffff';
+let currentColor = PATH_COLOR;
 
 let notes = {};
 let chatMessages = [];
@@ -107,6 +108,29 @@ function init() {
 
   // Add keyboard event listener for tool switching
   document.addEventListener('keydown', handleKeyboardShortcuts);
+
+  // Add color picker functionality
+  const colors = ['white', 'black', 'red', 'blue', 'green', 'orange', 'yellow', 'purple'];
+  const colorPicker = document.createElement('div');
+  colorPicker.id = 'color-picker';
+  colorPicker.style.display = 'flex';
+  colorPicker.style.flexWrap = 'wrap';
+  colorPicker.style.justifyContent = 'center';
+  colorPicker.style.marginTop = '10px';
+
+  colors.forEach(color => {
+    const colorButton = document.createElement('button');
+    colorButton.style.width = '30px';
+    colorButton.style.height = '30px';
+    colorButton.style.backgroundColor = color;
+    colorButton.style.margin = '2px';
+    colorButton.style.border = 'none';
+    colorButton.style.cursor = 'pointer';
+    colorButton.addEventListener('click', () => setColor(color));
+    colorPicker.appendChild(colorButton);
+  });
+
+  document.getElementById('floating-tools').appendChild(colorPicker);
 
   function downloadCanvas() {
     // Create a temporary canvas to draw all layers
@@ -232,7 +256,7 @@ function shapePreview(startPos, endPos) {
       y: Math.min(startPos.y, endPos.y),
       width: Math.abs(endPos.x - startPos.x),
       height: Math.abs(endPos.y - startPos.y),
-      stroke: 'green',
+      stroke: currentColor,
       strokeWidth: 2
     });
     let w = Math.abs(endPos.x - startPos.x) / CELL_SIZE;
@@ -243,7 +267,7 @@ function shapePreview(startPos, endPos) {
       text: "W: " + w + " H: " + h,
       fontSize: 12,
       fontFamily: 'Calibri',
-      fill: 'green',
+      fill: currentColor,
     })
   } else if (state.currentTool === 'circle') {
     const radius = Math.sqrt(Math.pow(endPos.x - startPos.x, 2) + Math.pow(endPos.y - startPos.y, 2)) / 2;
@@ -251,13 +275,13 @@ function shapePreview(startPos, endPos) {
       x: (startPos.x + endPos.x) / 2,
       y: (startPos.y + endPos.y) / 2,
       radius: radius,
-      stroke: 'green',
+      stroke: currentColor,
       strokeWidth: 2
     });
   } else if (state.currentTool === 'line') {
     shape = new Konva.Line({
       points: [startPos.x + CELL_SIZE / 2, startPos.y + CELL_SIZE / 2, endPos.x + CELL_SIZE / 2, endPos.y + CELL_SIZE / 2],
-      stroke: 'green',
+      stroke: currentColor,
       strokeWidth: 2
     });
   }
@@ -318,12 +342,16 @@ function updatePenPreview(snappedPos, CELL_SIZE, state) {
     y: snappedPos.y,
     width: CELL_SIZE,
     height: CELL_SIZE,
-    stroke: 'green',
+    stroke: currentColor,
     strokeWidth: 2
   });
   previewLayer.add(rect);
 
   previewLayer.batchDraw();
+}
+
+function setColor(color) {
+  currentColor = color;
 }
 
 
