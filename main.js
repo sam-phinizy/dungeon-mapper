@@ -100,9 +100,33 @@ function init() {
   document.getElementById('selectTool').addEventListener('click', () => setTool('select'));
   document.getElementById('doorTool').addEventListener('click', () => setTool('door'));
   document.getElementById('notesTool').addEventListener('click', () => setTool('notes'));
+  document.getElementById('downloadTool').addEventListener('click', downloadCanvas);
   
   document.getElementById('note-editor').querySelector('button:first-of-type').addEventListener('click', saveNote);
   document.getElementById('note-editor').querySelector('button:last-of-type').addEventListener('click', closeNoteEditor);
+
+  function downloadCanvas() {
+    // Create a temporary canvas to draw all layers
+    const tempCanvas = document.createElement('canvas');
+    const tempContext = tempCanvas.getContext('2d');
+    tempCanvas.width = stage.width();
+    tempCanvas.height = stage.height();
+
+    // Draw each layer onto the temporary canvas
+    [gridLayer, cellLayer, doorLayer, selectionLayer].forEach(layer => {
+      tempContext.drawImage(layer.canvas._canvas, 0, 0);
+    });
+
+    // Create a download link
+    const link = document.createElement('a');
+    link.download = 'dungeon_map.png';
+    link.href = tempCanvas.toDataURL('image/png');
+    
+    // Trigger the download
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
   
   window.addEventListener('resize', handleResize);
   
