@@ -80,7 +80,7 @@ const state = {
 function init() {
   initializeGrid(stage, cellLayer, CELL_SIZE);
   initializeDoorPreview(previewLayer);
-  
+
   stage.on('mousedown touchstart', handleStageMouseDown);
   stage.on('mousemove touchmove', handleStageMouseMove);
   stage.on('mouseup touchend', handleStageMouseUp);
@@ -92,7 +92,7 @@ function init() {
   renderGrid(cellLayer, CELL_SIZE);
   // Display loaded chat messages
   displayLoadedChatMessages();
-  
+
   document.getElementById('penTool').addEventListener('click', () => setTool('pen'));
   document.getElementById('rectTool').addEventListener('click', () => setTool('rect'));
   document.getElementById('circleTool').addEventListener('click', () => setTool('circle'));
@@ -101,7 +101,7 @@ function init() {
   document.getElementById('doorTool').addEventListener('click', () => setTool('door'));
   document.getElementById('notesTool').addEventListener('click', () => setTool('notes'));
   document.getElementById('downloadTool').addEventListener('click', downloadCanvas);
-  
+
   document.getElementById('note-editor').querySelector('button:first-of-type').addEventListener('click', saveNote);
   document.getElementById('note-editor').querySelector('button:last-of-type').addEventListener('click', closeNoteEditor);
 
@@ -128,18 +128,18 @@ function init() {
     const link = document.createElement('a');
     link.download = 'dungeon_map.png';
     link.href = tempCanvas.toDataURL('image/png');
-  
+
     // Trigger the download
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
-  
+
   window.addEventListener('resize', handleResize);
-  
+
   // Listen for changes in color scheme
   window.matchMedia('(prefers-color-scheme: dark)').addListener(handleColorSchemeChange);
-  
+
   setTool('pen'); // Set initial tool to pen
 }
 
@@ -167,7 +167,7 @@ function handleResize() {
   selectionLayer.height(newHeight);
   previewLayer.width(newWidth);
   previewLayer.height(newHeight);
-  
+
   drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
   stage.batchDraw();
 }
@@ -211,13 +211,64 @@ function handleStageMouseMove(e) {
   } else if (state.currentTool === 'select') {
     updateSelection(pos, CELL_SIZE);
   } else if (state.currentTool === 'pen') {
-  updatePenPreview(snappedPos, CELL_SIZE, state);
+    updatePenPreview(snappedPos, CELL_SIZE, state);
   } else if ((state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') && state.isDrawing) {
-    Preview(state.startPos, snappedPos);
+    shapePreview(state.startPos, snappedPos);
   } else if (state.currentTool === 'notes') {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
     showNotePopover(row, col, pos);
+  }
+}
+
+function shapePreview(startPos, endPos) {
+  previewLayer.destroyChildren();
+
+  let shape;
+  let text;
+  if (state.currentTool === 'rect') {
+    shape = new Konva.Rect({
+      x: Math.min(startPos.x, endPos.x),
+      y: Math.min(startPos.y, endPos.y),
+      width: Math.abs(endPos.x - startPos.x),
+      height: Math.abs(endPos.y - startPos.y),
+      stroke: 'green',
+      strokeWidth: 2
+    });
+    let w = Math.abs(endPos.x - startPos.x) / CELL_SIZE;
+    let h = Math.abs(endPos.y - startPos.y) / CELL_SIZE;
+    text = new Konva.Text({
+      x: (startPos.x + endPos.x) / 2,
+      y: (startPos.y - 12),
+      text: "W: " + w + " H: " + h,
+      fontSize: 12,
+      fontFamily: 'Calibri',
+      fill: 'green',
+    })
+  } else if (state.currentTool === 'circle') {
+    const radius = Math.sqrt(Math.pow(endPos.x - startPos.x, 2) + Math.pow(endPos.y - startPos.y, 2)) / 2;
+    shape = new Konva.Circle({
+      x: (startPos.x + endPos.x) / 2,
+      y: (startPos.y + endPos.y) / 2,
+      radius: radius,
+      stroke: 'green',
+      strokeWidth: 2
+    });
+  } else if (state.currentTool === 'line') {
+    shape = new Konva.Line({
+      points: [startPos.x + CELL_SIZE / 2, startPos.y + CELL_SIZE / 2, endPos.x + CELL_SIZE / 2, endPos.y + CELL_SIZE / 2],
+      stroke: 'green',
+      strokeWidth: 2
+    });
+  }
+
+  if (text) {
+    console.log("text")
+    previewLayer.add(text);
+  }
+  if (shape) {
+    previewLayer.add(shape);
+    previewLayer.batchDraw();
   }
 }
 
@@ -261,7 +312,7 @@ function handleStageMouseUp() {
 
 function updatePenPreview(snappedPos, CELL_SIZE, state) {
   previewLayer.destroyChildren();
-  
+
   const rect = new Konva.Rect({
     x: snappedPos.x,
     y: snappedPos.y,
@@ -281,7 +332,7 @@ function drawShape(startPos, endPos) {
   const startRow = Math.floor(startPos.y / CELL_SIZE);
   const endCol = Math.floor(endPos.x / CELL_SIZE);
   const endRow = Math.floor(endPos.y / CELL_SIZE);
-  
+
   if (state.currentTool === 'rect') {
     for (let row = Math.min(startRow, endRow); row <= Math.max(startRow, endRow); row++) {
       for (let col = Math.min(startCol, endCol); col <= Math.max(startCol, endCol); col++) {
@@ -292,7 +343,7 @@ function drawShape(startPos, endPos) {
     const centerRow = (startRow + endRow) / 2;
     const centerCol = (startCol + endCol) / 2;
     const radius = Math.sqrt(Math.pow(endRow - startRow, 2) + Math.pow(endCol - startCol, 2)) / 2;
-    
+
     for (let row = Math.floor(centerRow - radius); row <= Math.ceil(centerRow + radius); row++) {
       for (let col = Math.floor(centerCol - radius); col <= Math.ceil(centerCol + radius); col++) {
         if (Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2) <= Math.pow(radius, 2)) {
@@ -306,13 +357,13 @@ function drawShape(startPos, endPos) {
     const sx = startCol < endCol ? 1 : -1;
     const sy = startRow < endRow ? 1 : -1;
     let err = dx - dy;
-    
+
     let row = startRow;
     let col = startCol;
-    
+
     while (true) {
       toggleCell(col, row, cellLayer, CELL_SIZE);
-      
+
       if (row === endRow && col === endCol) break;
       const e2 = 2 * err;
       if (e2 > -dy) {
@@ -325,10 +376,10 @@ function drawShape(startPos, endPos) {
       }
     }
   }
-  
+
   cellLayer.batchDraw();
   saveToLocalStorage();
-  
+
   previewLayer.destroyChildren();
   previewLayer.batchDraw();
 }
@@ -342,11 +393,11 @@ function setTool(tool) {
   document.getElementById('selectTool').classList.toggle('active-tool', tool === 'select');
   document.getElementById('doorTool').classList.toggle('active-tool', tool === 'door');
   document.getElementById('notesTool').classList.toggle('active-tool', tool === 'notes');
-  
+
   if (tool !== 'select') {
     clearSelection(selectionLayer);
   }
-  
+
   if (tool !== 'door') {
     updateDoorPreview({ x: -1, y: -1 }, CELL_SIZE, state); // Hide door preview
   }
@@ -360,27 +411,49 @@ function handleKeyboardShortcuts(event) {
 
   switch (event.key.toLowerCase()) {
     case 'p':
+      if (state.currentTool == 'pen') {
+        break;
+      };
+      previewLayer.destroyChildren();
       setTool('pen');
       break;
     case 'c':
+      if (state.currentTool == 'circle') {
+        break;
+      };
+      previewLayer.destroyChildren();
+
       setTool('circle');
       break;
     case 'l':
+      if (state.currentTool == 'line') {
+        break;
+      };
+      previewLayer.destroyChildren();
+
       setTool('line');
       break;
     case 'n':
+      previewLayer.destroyChildren();
+
       setTool('notes');
       break;
     case 'r':
+      previewLayer.destroyChildren();
+
       setTool('rect');
       break;
+    case 'd':
+      previewLayer.destroyChildren();
+
+      setTool('door');
   }
 }
 
 function openNoteEditor(row, col) {
   const noteEditor = document.getElementById('note-editor');
   noteEditor.style.display = 'block';
-  
+
   const noteText = document.getElementById('note-text');
   const key = `${row}-${col}`;
   currentNote = { row, col };
@@ -494,13 +567,13 @@ document.addEventListener('DOMContentLoaded', () => {
     messageElement.innerHTML = marked.parse(message);
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    
+
     // Save the message to the chatMessages array
     chatMessages.push(message);
     saveToLocalStorage();
   }
 
-function handleSendMessage() {
+  function handleSendMessage() {
     const message = chatInput.value.trim();
     if (message) {
       addMessage(message);
