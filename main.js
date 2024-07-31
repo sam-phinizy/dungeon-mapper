@@ -105,6 +105,9 @@ function init() {
   document.getElementById('note-editor').querySelector('button:first-of-type').addEventListener('click', saveNote);
   document.getElementById('note-editor').querySelector('button:last-of-type').addEventListener('click', closeNoteEditor);
 
+  // Add keyboard event listener for tool switching
+  document.addEventListener('keydown', handleKeyboardShortcuts);
+
   function downloadCanvas() {
     // Create a temporary canvas to draw all layers
     const tempCanvas = document.createElement('canvas');
@@ -346,6 +349,31 @@ function setTool(tool) {
   
   if (tool !== 'door') {
     updateDoorPreview({ x: -1, y: -1 }, CELL_SIZE, state); // Hide door preview
+  }
+}
+
+function handleKeyboardShortcuts(event) {
+  // Ignore keyboard shortcuts when typing in input fields
+  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+    return;
+  }
+
+  switch (event.key.toLowerCase()) {
+    case 'p':
+      setTool('pen');
+      break;
+    case 'c':
+      setTool('circle');
+      break;
+    case 'l':
+      setTool('line');
+      break;
+    case 'n':
+      setTool('notes');
+      break;
+    case 'r':
+      setTool('rect');
+      break;
   }
 }
 
