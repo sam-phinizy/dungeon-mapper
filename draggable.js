@@ -2,6 +2,7 @@ export function makeDraggable(element, handle) {
   let isDragging = false;
   let startX, startY, startLeft, startTop;
 
+
   handle.addEventListener('mousedown', startDragging);
 
   function startDragging(e) {

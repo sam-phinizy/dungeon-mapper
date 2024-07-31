@@ -261,10 +261,7 @@ function loadFromLocalStorage() {
   if (savedNotes) {
     setNotes(savedNotes);
     // Highlight cells with notes
-    for (const key in savedNotes) {
-      const [row, col] = key.split('-').map(Number);
-      highlightNoteCell(row, col);
-    }
+
   }
 
   const savedChatMessages = JSON.parse(localStorage.getItem('dungeonMapperChatMessages'));
@@ -299,16 +296,16 @@ function addMessage(message) {
 }
 
 function initializeDOMElements() {
+  console.log("initialize")
   // Make the floating tools window draggable by its title bar
   const floatingTools = document.getElementById('floating-tools');
   const floatingToolsHandle = floatingTools.querySelector('.window-title');
-  makeDraggable(floatingTools, floatingToolsHandle);
 
   // Make the note editor draggable by its title bar
   const noteEditor = document.getElementById('note-editor');
   const noteEditorHandle = noteEditor.querySelector('.window-title');
+  makeDraggable(floatingTools, floatingToolsHandle);
   makeDraggable(noteEditor, noteEditorHandle);
-
   // Ensure the makeDraggable function is called after a short delay
   setTimeout(() => {
     makeDraggable(floatingTools, floatingToolsHandle);
