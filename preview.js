@@ -8,9 +8,10 @@ function initializePreview(layer) {
     previewLayer = layer;
 }
 
-function updatePenPreview(snappedPos, CELL_SIZE, currentColor) {
+function updatePenPreview(pos, CELL_SIZE, currentColor) {
     previewLayer.destroyChildren();
 
+    const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
     const rect = new Konva.Rect({
         x: snappedPos.x,
         y: snappedPos.y,

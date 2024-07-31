@@ -11,6 +11,7 @@ import { makeDraggable } from './draggable.js';
 
 const CELL_SIZE = 20;
 const GRID_COLOR = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '#444444' : '#cccccc';
+const PREVIEW_COLOR = 'rgba(0, 255, 0, 0.5)';
 
 let stage, gridLayer, cellLayer, doorLayer, selectionLayer, previewLayer;
 let chatMessages = [];
@@ -122,8 +123,12 @@ function handleStageMouseMove(e) {
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
     toggleCell(x, y, cellLayer, CELL_SIZE, getCurrentColor());
-  } else if ((state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') && state.isDrawing) {
-    shapePreview(state.startPos, snappedPos, state.currentTool, CELL_SIZE, getCurrentColor());
+  } else if (state.currentTool == 'pen' && !state.isDrawing) {
+    updatePenPreview(pos, CELL_SIZE, PREVIEW_COLOR);
+
+  }
+  else if ((state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') && state.isDrawing) {
+    shapePreview(state.startPos, snappedPos, state.currentTool, CELL_SIZE, PREVIEW_COLOR);
   } else if (state.currentTool === 'notes') {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
