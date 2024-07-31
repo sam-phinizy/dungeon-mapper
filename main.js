@@ -70,17 +70,12 @@ stage.add(previewLayer);
 
 const CELL_SIZE = 20;
 const GRID_COLOR = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '#444444' : '#cccccc';
-const PREVIEW_CELL_SIZE = 5;
-const PREVIEW_OPACITY = 0.5;
 
 // Create a state object to hold shared state
 const state = {
   currentTool: 'draw',
   isDrawing: false
 };
-
-let draggedRoom = null;
-let ghostPreview = null;
 
 function init() {
   initializeGrid(stage, cellLayer, CELL_SIZE);
@@ -151,12 +146,13 @@ let initialCellState;
 function handleStageMouseDown(e) {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-
+  console.debug("mousedown")
   if (state.currentTool === 'door') {
     placeDoor(doorLayer);
   } else if (state.currentTool === 'select') {
     startSelection(snappedPos, selectionLayer, CELL_SIZE);
   } else if (state.currentTool === 'pen') {
+    console.log("Drawing pen")
     state.isDrawing = true;
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
@@ -179,17 +175,14 @@ function handleStageMouseDown(e) {
 function handleStageMouseMove(e) {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-
   if (state.currentTool === 'door') {
     updateDoorPreview(pos, CELL_SIZE, state);
   } else if (state.currentTool === 'select') {
     updateSelection(pos, CELL_SIZE);
-  } else if (state.currentTool === 'pen' && state.isDrawing) {
-    const row = Math.floor(snappedPos.y / CELL_SIZE);
-    const col = Math.floor(snappedPos.x / CELL_SIZE);
-    setCell(row, col, 1 - initialCellState, cellLayer);
+  } else if (state.currentTool === 'pen') {
+  updatePenPreview(snappedPos, CELL_SIZE, state);
   } else if ((state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') && state.isDrawing) {
-    updateShapePreview(state.startPos, snappedPos);
+    Preview(state.startPos, snappedPos);
   } else if (state.currentTool === 'notes') {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
@@ -212,27 +205,10 @@ function showNotePopover(row, col, pos) {
     popover.style.minHeight = '100px';
     popover.style.maxWidth = '300px';
     popover.style.maxHeight = '200px';
-    popover.style.overflow = 'scrollmak';
+    popover.style.overflow = 'scroll';
   } else {
     popover.style.display = 'none';
   }
-}
-
-function setCell(row, col, state, cellLayer) {
-  const key = `${col},${row}`;
-  dungeonMapperGrid.set(key, state);
-  const x = col * CELL_SIZE;
-  const y = row * CELL_SIZE;
-  const rect = new Konva.Rect({
-    x: x,
-    y: y,
-    width: CELL_SIZE,
-    height: CELL_SIZE,
-    fill: state ? PATH_COLOR : WALL_COLOR,
-  });
-  cellLayer.add(rect);
-  cellLayer.batchDraw();
-  saveToLocalStorage();
 }
 
 function handleStageMouseUp() {
@@ -252,91 +228,35 @@ function handleStageMouseUp() {
   }
 }
 
-function updateShapePreview(startPos, endPos) {
+function updatePenPreview(snappedPos, CELL_SIZE, state) {
   previewLayer.destroyChildren();
   
-  if (state.currentTool === 'rect') {
-    const rect = new Konva.Rect({
-      x: Math.min(startPos.x, endPos.x),
-      y: Math.min(startPos.y, endPos.y),
-      width: Math.abs(endPos.x - startPos.x) + CELL_SIZE,
-      height: Math.abs(endPos.y - startPos.y) + CELL_SIZE,
-      stroke: 'green',
-      strokeWidth: 2
-    });
-    previewLayer.add(rect);
-  } else if (state.currentTool === 'circle') {
-    const centerX = (startPos.x + endPos.x) / 2;
-    const centerY = (startPos.y + endPos.y) / 2;
-    const radius = Math.sqrt(Math.pow(endPos.x - startPos.x, 2) + Math.pow(endPos.y - startPos.y, 2)) / 2;
-    
-    const points = [];
-    for (let angle = 0; angle < 360; angle += 5) {
-      const x = centerX + radius * Math.cos(angle * Math.PI / 180);
-      const y = centerY + radius * Math.sin(angle * Math.PI / 180);
-      const snappedPoint = snapToGrid(x, y, CELL_SIZE);
-      points.push(snappedPoint.x, snappedPoint.y);
-    }
-    
-    const circleOutline = new Konva.Line({
-      points: points,
-      stroke: 'green',
-      strokeWidth: 2,
-      closed: true
-    });
-    previewLayer.add(circleOutline);
-  } else if (state.currentTool === 'line') {
-    const startX = startPos.x + CELL_SIZE / 2;
-    const startY = startPos.y + CELL_SIZE / 2;
-    const endX = endPos.x + CELL_SIZE / 2;
-    const endY = endPos.y + CELL_SIZE / 2;
-    const line = new Konva.Line({
-      points: [startX, startY, endX, endY],
-      stroke: 'green',
-      strokeWidth: 2
-    });
-    previewLayer.add(line);
-  }
-  
+  const rect = new Konva.Rect({
+    x: snappedPos.x,
+    y: snappedPos.y,
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    stroke: 'green',
+    strokeWidth: 2
+  });
+  previewLayer.add(rect);
+
   previewLayer.batchDraw();
 }
 
+
 function drawShape(startPos, endPos) {
-  const startRow = Math.floor(startPos.y / CELL_SIZE);
   const startCol = Math.floor(startPos.x / CELL_SIZE);
-  const endRow = Math.floor(endPos.y / CELL_SIZE);
+  const startRow = Math.floor(startPos.y / CELL_SIZE);
   const endCol = Math.floor(endPos.x / CELL_SIZE);
+  const endRow = Math.floor(endPos.y / CELL_SIZE);
   
   if (state.currentTool === 'rect') {
-    const x = Math.min(startPos.x, endPos.x);
-    const y = Math.min(startPos.y, endPos.y);
-    const width = Math.abs(endPos.x - startPos.x) + CELL_SIZE;
-    const height = Math.abs(endPos.y - startPos.y) + CELL_SIZE;
-    
-    const rect = new Konva.Rect({
-      x: x,
-      y: y,
-      width: width,
-      height: height,
-      fill: initialCellState ? PATH_COLOR : WALL_COLOR,
-    });
-    
-    cellLayer.add(rect);
-    cellLayer.batchDraw();
-    
-    // Update the grid data structure
     for (let row = Math.min(startRow, endRow); row <= Math.max(startRow, endRow); row++) {
       for (let col = Math.min(startCol, endCol); col <= Math.max(startCol, endCol); col++) {
-        dungeonMapperGrid.set(`${col},${row}`, 1);
+        toggleCell(col, row, cellLayer, CELL_SIZE);
       }
     }
-    
-    // Save the updated grid to localStorage
-    saveToLocalStorage();
-    
-    // Clear the preview layer
-    previewLayer.destroyChildren();
-    previewLayer.batchDraw();
   } else if (state.currentTool === 'circle') {
     const centerRow = (startRow + endRow) / 2;
     const centerCol = (startCol + endCol) / 2;
@@ -345,13 +265,10 @@ function drawShape(startPos, endPos) {
     for (let row = Math.floor(centerRow - radius); row <= Math.ceil(centerRow + radius); row++) {
       for (let col = Math.floor(centerCol - radius); col <= Math.ceil(centerCol + radius); col++) {
         if (Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2) <= Math.pow(radius, 2)) {
-          setCell(row, col, 1, cellLayer);
+          toggleCell(col, row, cellLayer, CELL_SIZE);
         }
       }
     }
-    
-    // Save the updated grid to localStorage
-    saveToLocalStorage();
   } else if (state.currentTool === 'line') {
     const dx = Math.abs(endCol - startCol);
     const dy = Math.abs(endRow - startRow);
@@ -363,15 +280,7 @@ function drawShape(startPos, endPos) {
     let col = startCol;
     
     while (true) {
-      dungeonMapperGrid.set(`${col},${row}`, 1 - initialCellState);
-      const cell = new Konva.Rect({
-        x: col * CELL_SIZE,
-        y: row * CELL_SIZE,
-        width: CELL_SIZE,
-        height: CELL_SIZE,
-        fill: initialCellState ? PATH_COLOR : WALL_COLOR,
-      });
-      cellLayer.add(cell);
+      toggleCell(col, row, cellLayer, CELL_SIZE);
       
       if (row === endRow && col === endCol) break;
       const e2 = 2 * err;
@@ -384,14 +293,13 @@ function drawShape(startPos, endPos) {
         row += sy;
       }
     }
-    
-    cellLayer.batchDraw();
-    saveToLocalStorage();
   }
+  
+  cellLayer.batchDraw();
+  saveToLocalStorage();
   
   previewLayer.destroyChildren();
   previewLayer.batchDraw();
-  cellLayer.batchDraw();
 }
 
 function setTool(tool) {
