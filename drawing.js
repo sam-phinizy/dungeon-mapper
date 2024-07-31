@@ -20,26 +20,23 @@ function drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR) {
 
 function toggleCell(x, y, cellLayer, CELL_SIZE) {
   const key = `${x},${y}`;
-  const currentValue = dungeonMapperGrid.get(key) || 0;
-  const newValue = 1 - currentValue;
-  // if cell is already in the grid just pop it
-  if (dungeonMapperGrid.has(key)) {
+  const currentValue = dungeonMapperGrid.get(key);
+  if (currentValue === currentColor) {
     dungeonMapperGrid.delete(key);
   } else {
-    dungeonMapperGrid.set(key, newValue);
-
+    dungeonMapperGrid.set(key, currentColor);
   }
 
   const cell = cellLayer.findOne(`#cell-${x}-${y}`);
   if (cell) {
-    cell.fill(newValue ? PATH_COLOR : WALL_COLOR);
+    cell.fill(currentColor);
   } else {
     const newCell = new Konva.Rect({
       x: x * CELL_SIZE,
       y: y * CELL_SIZE,
       width: CELL_SIZE,
       height: CELL_SIZE,
-      fill: newValue ? PATH_COLOR : WALL_COLOR,
+      fill: currentColor,
       id: `cell-${x}-${y}`,
     });
     cellLayer.add(newCell);
