@@ -112,6 +112,10 @@ function init() {
     tempCanvas.width = stage.width();
     tempCanvas.height = stage.height();
 
+    // Set the background color to match the canvas container
+    tempContext.fillStyle = '#1a1a1a';
+    tempContext.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
     // Draw each layer onto the temporary canvas
     [gridLayer, cellLayer, doorLayer, selectionLayer].forEach(layer => {
       tempContext.drawImage(layer.canvas._canvas, 0, 0);
@@ -121,7 +125,7 @@ function init() {
     const link = document.createElement('a');
     link.download = 'dungeon_map.png';
     link.href = tempCanvas.toDataURL('image/png');
-    
+  
     // Trigger the download
     document.body.appendChild(link);
     link.click();
