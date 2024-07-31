@@ -1,37 +1,37 @@
 export function makeDraggable(element, handle) {
-  let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-  handle.onmousedown = dragMouseDown;
+  let isDragging = false;
+  let startX, startY, startLeft, startTop;
 
-  function dragMouseDown(e) {
-    e = e || window.event;
+  handle.addEventListener('mousedown', startDragging);
+
+  function startDragging(e) {
     // Only start dragging if the mouse is on the handle and not on a form element
     if (e.target === handle && !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(e.target.tagName)) {
       e.preventDefault();
-      // get the mouse cursor position at startup:
-      pos3 = e.clientX;
-      pos4 = e.clientY;
-      document.onmouseup = closeDragElement;
-      // call a function whenever the cursor moves:
-      document.onmousemove = elementDrag;
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = element.offsetLeft;
+      startTop = element.offsetTop;
+
+      document.addEventListener('mousemove', drag);
+      document.addEventListener('mouseup', stopDragging);
     }
   }
 
-  function elementDrag(e) {
-    e = e || window.event;
-    e.preventDefault();
-    // calculate the new cursor position:
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    // set the element's new position:
-    element.style.top = (element.offsetTop - pos2) + "px";
-    element.style.left = (element.offsetLeft - pos1) + "px";
+  function drag(e) {
+    if (isDragging) {
+      e.preventDefault();
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      element.style.left = `${startLeft + dx}px`;
+      element.style.top = `${startTop + dy}px`;
+    }
   }
 
-  function closeDragElement() {
-    // stop moving when mouse button is released:
-    document.onmouseup = null;
-    document.onmousemove = null;
+  function stopDragging() {
+    isDragging = false;
+    document.removeEventListener('mousemove', drag);
+    document.removeEventListener('mouseup', stopDragging);
   }
 }
