@@ -309,6 +309,12 @@ function initializeDOMElements() {
   const noteEditorHandle = noteEditor.querySelector('.window-title');
   makeDraggable(noteEditor, noteEditorHandle);
 
+  // Ensure the makeDraggable function is called after a short delay
+  setTimeout(() => {
+    makeDraggable(floatingTools, floatingToolsHandle);
+    makeDraggable(noteEditor, noteEditorHandle);
+  }, 100);
+
   // Sidebar resizing functionality
   const resizer = document.getElementById('sidebar-resizer');
   const sidebar = document.getElementById('sidebar');
