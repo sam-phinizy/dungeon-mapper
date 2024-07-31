@@ -8,12 +8,13 @@ import { initializeToolbar, setTool, getCurrentColor } from './toolbar.js';
 import { initializeNotes, openNoteEditor, showNotePopover, getNotes, setNotes } from './notes.js';
 import { initializePreview, updatePenPreview, shapePreview, clearPreview } from './preview.js';
 import { makeDraggable } from './draggable.js';
+import { initializeRoughLinePreview, updateRoughLinePreview, placeRoughLine, clearRoughLines } from './roughLine.js';
 
 const CELL_SIZE = 20;
 const GRID_COLOR = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '#444444' : '#cccccc';
 const PREVIEW_COLOR = 'rgba(0, 255, 0, 0.5)';
 
-let stage, gridLayer, cellLayer, doorLayer, selectionLayer, previewLayer;
+let stage, gridLayer, cellLayer, doorLayer, selectionLayer, previewLayer, roughLineLayer;
 let chatMessages = [];
 
 // Create a state object to hold shared state
@@ -27,6 +28,7 @@ function init() {
   initializeStage();
   initializeGrid(stage, cellLayer, CELL_SIZE);
   initializeDoorPreview(previewLayer);
+  initializeRoughLinePreview(previewLayer);
   initializeToolbar();
   initializeNotes();
   initializePreview(previewLayer);
@@ -66,12 +68,14 @@ function initializeStage() {
   gridLayer = new Konva.Layer();
   cellLayer = new Konva.Layer();
   doorLayer = new Konva.Layer();
+  roughLineLayer = new Konva.Layer();
   selectionLayer = new Konva.Layer();
   previewLayer = new Konva.Layer();
 
   stage.add(gridLayer);
   stage.add(cellLayer);
   stage.add(doorLayer);
+  stage.add(roughLineLayer);
   stage.add(selectionLayer);
   stage.add(previewLayer);
 
@@ -80,6 +84,7 @@ function initializeStage() {
   window.gridLayer = gridLayer;
   window.cellLayer = cellLayer;
   window.doorLayer = doorLayer;
+  window.roughLineLayer = roughLineLayer;
   window.selectionLayer = selectionLayer;
   window.CELL_SIZE = CELL_SIZE;
   window.state = state;
@@ -94,6 +99,8 @@ function handleStageMouseDown(e) {
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
   if (state.currentTool === 'door') {
     placeDoor(doorLayer);
+  } else if (state.currentTool === 'roughLine') {
+    placeRoughLine(roughLineLayer, CELL_SIZE);
   } else if (state.currentTool === 'select') {
     startSelection(snappedPos, selectionLayer, CELL_SIZE);
   } else if (state.currentTool === 'pen') {
@@ -117,6 +124,8 @@ function handleStageMouseMove(e) {
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
   if (state.currentTool === 'door') {
     updateDoorPreview(pos, CELL_SIZE, state);
+  } else if (state.currentTool === 'roughLine') {
+    updateRoughLinePreview(pos, CELL_SIZE, state);
   } else if (state.currentTool === 'select') {
     updateSelection(pos, CELL_SIZE);
   } else if (state.currentTool === 'pen' && state.isDrawing) {
@@ -125,9 +134,7 @@ function handleStageMouseMove(e) {
     toggleCell(x, y, cellLayer, CELL_SIZE, getCurrentColor());
   } else if (state.currentTool == 'pen' && !state.isDrawing) {
     updatePenPreview(pos, CELL_SIZE, PREVIEW_COLOR);
-
-  }
-  else if ((state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') && state.isDrawing) {
+  } else if ((state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') && state.isDrawing) {
     shapePreview(state.startPos, snappedPos, state.currentTool, CELL_SIZE, PREVIEW_COLOR);
   } else if (state.currentTool === 'notes') {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
@@ -207,13 +214,10 @@ function drawShape(startPos, endPos, currentColor) {
 }
 
 function handleKeyboardShortcuts(event) {
-  console.log("Keyboard shortcut")
-
   // Ignore keyboard shortcuts when typing in input fields
   if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
     return;
   }
-
 
   switch (event.key.toLowerCase()) {
     case 'p': setTool('pen'); break;
@@ -223,6 +227,7 @@ function handleKeyboardShortcuts(event) {
     case 's': setTool('select'); break;
     case 'd': setTool('door'); break;
     case 'n': setTool('notes'); break;
+    case 'u': setTool('roughLine'); break; // Add shortcut for rough line tool
   }
 }
 

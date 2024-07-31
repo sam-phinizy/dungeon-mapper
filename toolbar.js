@@ -10,6 +10,7 @@ function initializeToolbar() {
     document.getElementById('selectTool').addEventListener('click', () => setTool('select'));
     document.getElementById('doorTool').addEventListener('click', () => setTool('door'));
     document.getElementById('notesTool').addEventListener('click', () => setTool('notes'));
+    document.getElementById('roughLineTool').addEventListener('click', () => setTool('roughLine'));
     document.getElementById('downloadTool').addEventListener('click', downloadCanvas);
 
     initializeColorPicker();
@@ -53,6 +54,7 @@ function setTool(tool) {
     document.getElementById('selectTool').classList.toggle('active-tool', tool === 'select');
     document.getElementById('doorTool').classList.toggle('active-tool', tool === 'door');
     document.getElementById('notesTool').classList.toggle('active-tool', tool === 'notes');
+    document.getElementById('roughLineTool').classList.toggle('active-tool', tool === 'roughLine');
 }
 
 function setColor(color) {
