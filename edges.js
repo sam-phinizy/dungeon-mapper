@@ -99,7 +99,7 @@ function placeEdge(edgeLayer, CELL_SIZE) {
     const doorLine = new Konva.Line({
       points: points,
       stroke: DOOR_COLOR,
-      strokeWidth: 3
+      strokeWidth: 5
     });
 
     // Calculate the middle point and direction of the door

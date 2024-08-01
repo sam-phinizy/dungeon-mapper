@@ -293,7 +293,11 @@ function loadFromLocalStorage() {
 
   const savedEdges = JSON.parse(localStorage.getItem('dungeonMapperEdges'));
   if (savedEdges) {
-    edges = new Map(savedEdges);
+    edges.clear();
+    savedEdges.forEach(([key, value]) => {
+      edges.set(key, value);
+    });
+    edgeLayer.batchDraw();
   }
 }
 
