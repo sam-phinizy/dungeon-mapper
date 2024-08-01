@@ -8,6 +8,7 @@ import { initializePreview, updatePenPreview, shapePreview, clearPreview } from 
 import { makeDraggable } from './draggable.js';
 import { initializeRoughLinePreview, updateRoughLinePreview, placeRoughLine, clearRoughLines } from './roughLine.js';
 import { ColorEnum, ColorMap, getColorEnum, getColorName } from './colors.js';
+import { initializeEdgePreview, updateEdgePreview, placeEdge, clearEdges, edges } from './edges.js';
 
 const CELL_SIZE = 20;
 const GRID_COLOR = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '#444444' : '#cccccc';
@@ -47,8 +48,7 @@ window.saveToLocalStorage = saveToLocalStorage;
 function init() {
   initializeStage();
   initializeGrid(stage, cellLayer, CELL_SIZE);
-  initializeDoorPreview(previewLayer);
-  initializeRoughLinePreview(previewLayer);
+  initializeEdgePreview(previewLayer);
   initializeToolbar();
   initializeNotes();
   initializePreview(previewLayer);
@@ -87,15 +87,13 @@ function initializeStage() {
 
   gridLayer = new Konva.Layer();
   cellLayer = new Konva.Layer();
-  doorLayer = new Konva.Layer();
-  roughLineLayer = new Konva.Layer();
+  edgeLayer = new Konva.Layer();
   selectionLayer = new Konva.Layer();
   previewLayer = new Konva.Layer();
 
   stage.add(gridLayer);
   stage.add(cellLayer);
-  stage.add(doorLayer);
-  stage.add(roughLineLayer);
+  stage.add(edgeLayer);
   stage.add(selectionLayer);
   stage.add(previewLayer);
 
@@ -103,8 +101,7 @@ function initializeStage() {
   window.stage = stage;
   window.gridLayer = gridLayer;
   window.cellLayer = cellLayer;
-  window.doorLayer = doorLayer;
-  window.roughLineLayer = roughLineLayer;
+  window.edgeLayer = edgeLayer;
   window.selectionLayer = selectionLayer;
   window.CELL_SIZE = CELL_SIZE;
   window.state = state;
@@ -117,12 +114,9 @@ function calculateAvailableWidth() {
 function handleStageMouseDown(e) {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  if (state.currentTool === 'door') {
-    placeDoor(doorLayer);
-    debouncedSave(); // Save after placing a door
-  } else if (state.currentTool === 'roughLine') {
-    placeRoughLine(roughLineLayer, CELL_SIZE);
-    debouncedSave(); // Save after placing a rough line
+  if (state.currentTool === 'door' || state.currentTool === 'roughLine') {
+    placeEdge(edgeLayer, CELL_SIZE);
+    debouncedSave(); // Save after placing an edge
   } else if (state.currentTool === 'select') {
     startSelection(snappedPos, selectionLayer, CELL_SIZE);
   } else if (state.currentTool === 'pen') {
@@ -144,10 +138,8 @@ function handleStageMouseDown(e) {
 function handleStageMouseMove(e) {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  if (state.currentTool === 'door') {
-    updateDoorPreview(pos, CELL_SIZE, state);
-  } else if (state.currentTool === 'roughLine') {
-    updateRoughLinePreview(pos, CELL_SIZE, state);
+  if (state.currentTool === 'door' || state.currentTool === 'roughLine') {
+    updateEdgePreview(pos, CELL_SIZE, state);
   } else if (state.currentTool === 'select') {
     updateSelection(pos, CELL_SIZE);
   } else if (state.currentTool === 'pen' && state.isDrawing) {
@@ -266,8 +258,8 @@ function handleResize() {
   gridLayer.height(newHeight);
   cellLayer.width(newWidth);
   cellLayer.height(newHeight);
-  doorLayer.width(newWidth);
-  doorLayer.height(newHeight);
+  edgeLayer.width(newWidth);
+  edgeLayer.height(newHeight);
   selectionLayer.width(newWidth);
   selectionLayer.height(newHeight);
   previewLayer.width(newWidth);
@@ -276,6 +268,7 @@ function handleResize() {
   drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
   stage.batchDraw();
 }
+
 
 function handleColorSchemeChange(e) {
   stage.batchDraw();
@@ -300,6 +293,11 @@ function loadFromLocalStorage() {
   if (savedChatMessages) {
     chatMessages = savedChatMessages;
   }
+
+  const savedEdges = JSON.parse(localStorage.getItem('dungeonMapperEdges'));
+  if (savedEdges) {
+    edges = new Map(savedEdges);
+  }
 }
 
 
@@ -313,7 +311,8 @@ function saveToLocalStorage() {
   localStorage.setItem('dungeonMapperGrid', JSON.stringify(gridData));
   localStorage.setItem('dungeonMapperNotes', JSON.stringify(getNotes()));
   localStorage.setItem('dungeonMapperChatMessages', JSON.stringify(chatMessages));
-  console.log('Saved to local storage'); // Add this line for debugging
+  localStorage.setItem('dungeonMapperEdges', JSON.stringify(Array.from(edges)));
+  console.log('Saved to local storage');
 }
 
 function displayLoadedChatMessages() {
