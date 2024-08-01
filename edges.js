@@ -1,7 +1,7 @@
-// edges.js
 
 import { snapToGrid } from './utils.js';
 import { getCurrentColor, getCurrentRoughLineType } from './toolbar.js';
+import { ColorMap } from './colors.js';
 
 const DOOR_COLOR = '#8B4513';
 const DOOR_FILL_COLOR = '#DEB887';
@@ -83,10 +83,8 @@ function placeEdge(edgeLayer, CELL_SIZE) {
   const line = edgePreview.findOne('Line');
   const points = line.points();
 
-  // Create a unique key for this edge
   const edgeKey = `${points[0]},${points[1]}-${points[2]},${points[3]}`;
 
-  // If an edge already exists on this edge, remove it
   if (edges.has(edgeKey)) {
     const existingEdge = edges.get(edgeKey);
     existingEdge.destroy();
@@ -103,7 +101,6 @@ function placeEdge(edgeLayer, CELL_SIZE) {
       strokeWidth: 5
     });
 
-    // Calculate the middle point and direction of the door
     const startX = points[0];
     const startY = points[1];
     const endX = points[2];
@@ -113,13 +110,10 @@ function placeEdge(edgeLayer, CELL_SIZE) {
     const dx = endX - startX;
     const dy = endY - startY;
     const length = Math.sqrt(dx * dx + dy * dy);
-
-    // Calculate the rectangle dimensions
-    const rectWidth = CELL_SIZE * 0.5;
-    const rectHeight = length * 0.33;  // 1/3 of the door length
-
-    // Calculate the rectangle position and rotation
     const angle = Math.atan2(dy, dx);
+
+    const rectWidth = CELL_SIZE * 0.5;
+    const rectHeight = length * 0.33;
     const rectX = midX - rectWidth / 2 * Math.cos(angle) + rectHeight / 2 * Math.sin(angle);
     const rectY = midY - rectWidth / 2 * Math.sin(angle) - rectHeight / 2 * Math.cos(angle);
 
@@ -141,19 +135,17 @@ function placeEdge(edgeLayer, CELL_SIZE) {
     const currentColor = getCurrentColor();
 
     if (currentRoughLineType === 'normal') {
-      // Create a single straight line for 'Normal' type
       const normalLine = new Konva.Line({
         points: points,
-        stroke: currentColor,
+        stroke: ColorMap[currentColor],
         strokeWidth: 2,
         lineCap: 'round',
         lineJoin: 'round'
       });
       edge.add(normalLine);
     } else {
-      // Create 2-3 slightly offset lines for other rough line types
       for (let i = 0; i < 3; i++) {
-        const offset = Math.random() * 2 - 1; // Random offset between -1 and 1
+        const offset = Math.random() * 2 - 1;
         const roughSegment = new Konva.Line({
           points: [
             points[0] + offset,
@@ -161,11 +153,11 @@ function placeEdge(edgeLayer, CELL_SIZE) {
             points[2] + offset,
             points[3] + offset
           ],
-          stroke: currentColor,
+          stroke: ColorMap[currentColor],
           strokeWidth: 1,
           lineCap: 'round',
           lineJoin: 'round',
-          tension: 0.5 // Add some curvature for a hand-drawn look
+          tension: 0.5
         });
         edge.add(roughSegment);
       }
@@ -182,17 +174,16 @@ function placeEdge(edgeLayer, CELL_SIZE) {
   edges.set(edgeKey, edgeData);
   edgeLayer.batchDraw();
 
-  // Trigger save after adding an edge
   if (typeof window.saveToLocalStorage === 'function') {
     window.saveToLocalStorage();
   }
 }
-
 function clearEdges(edgeLayer) {
   edges.forEach(edge => edge.destroy());
   edges.clear();
   edgeLayer.draw();
 }
+
 
 
 function loadEdgesFromStorage(savedEdges, edgeLayer) {
@@ -239,7 +230,7 @@ function loadEdgesFromStorage(savedEdges, edgeLayer) {
       if (value.roughLineType === 'normal') {
         const normalLine = new Konva.Line({
           points: [startX, startY, endX, endY],
-          stroke: value.color,
+          stroke: ColorMap[value.color],
           strokeWidth: 2,
           lineCap: 'round',
           lineJoin: 'round'
@@ -255,7 +246,7 @@ function loadEdgesFromStorage(savedEdges, edgeLayer) {
               endX + offset,
               endY + offset
             ],
-            stroke: value.color,
+            stroke: ColorMap[value.color],
             strokeWidth: 1,
             lineCap: 'round',
             lineJoin: 'round',
@@ -273,4 +264,6 @@ function loadEdgesFromStorage(savedEdges, edgeLayer) {
   console.log('Loaded edges:', edges);
   edgeLayer.batchDraw();
 }
+
+
 export { initializeEdgePreview, updateEdgePreview, placeEdge, clearEdges, edges, loadEdgesFromStorage };
