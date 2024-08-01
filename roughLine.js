@@ -1,6 +1,6 @@
 // roughLine.js
 
-import { getCurrentColor } from './toolbar.js';
+import { getCurrentColor, getCurrentRoughLineType } from './toolbar.js';
 import { snapToGrid } from './utils.js';
 
 const ROUGH_LINE_COLOR = '#8B4513';
@@ -8,6 +8,7 @@ const ROUGH_LINE_PREVIEW_COLOR = 'rgba(139, 69, 19, 0.5)';
 
 let roughLinePreview;
 let previewLayer;
+let roughLines = new Map(); // Store rough lines by their edge key
 
 function initializeRoughLinePreview(layer) {
   previewLayer = layer;
@@ -81,33 +82,58 @@ function placeRoughLine(roughLineLayer, CELL_SIZE) {
   const line = roughLinePreview.findOne('Line');
   const points = line.points();
 
-  const roughLine = new Konva.Group();
+  // Create a unique key for this edge
+  const edgeKey = `${points[0]},${points[1]}-${points[2]},${points[3]}`;
 
-  // Create 2-3 slightly offset lines for a rough appearance
-  for (let i = 0; i < 3; i++) {
-    const offset = Math.random() * 2 - 1; // Random offset between -1 and 1
-    const roughSegment = new Konva.Line({
-      points: [
-        points[0] + offset,
-        points[1] + offset,
-        points[2] + offset,
-        points[3] + offset
-      ],
+  // If a rough line already exists on this edge, remove it
+  if (roughLines.has(edgeKey)) {
+    const existingLine = roughLines.get(edgeKey);
+    existingLine.destroy();
+    roughLines.delete(edgeKey);
+  }
+
+  const roughLine = new Konva.Group();
+  const currentRoughLineType = getCurrentRoughLineType();
+
+  if (currentRoughLineType === 'normal') {
+    // Create a single straight line for 'Normal' type
+    const normalLine = new Konva.Line({
+      points: points,
       stroke: getCurrentColor(),
-      strokeWidth: 1,
+      strokeWidth: 2,
       lineCap: 'round',
-      lineJoin: 'round',
-      tension: 0.5 // Add some curvature for a hand-drawn look
+      lineJoin: 'round'
     });
-    roughLine.add(roughSegment);
+    roughLine.add(normalLine);
+  } else {
+    // Create 2-3 slightly offset lines for other rough line types
+    for (let i = 0; i < 3; i++) {
+      const offset = Math.random() * 2 - 1; // Random offset between -1 and 1
+      const roughSegment = new Konva.Line({
+        points: [
+          points[0] + offset,
+          points[1] + offset,
+          points[2] + offset,
+          points[3] + offset
+        ],
+        stroke: getCurrentColor(),
+        strokeWidth: 1,
+        lineCap: 'round',
+        lineJoin: 'round',
+        tension: 0.5 // Add some curvature for a hand-drawn look
+      });
+      roughLine.add(roughSegment);
+    }
   }
 
   roughLineLayer.add(roughLine);
+  roughLines.set(edgeKey, roughLine); // Store the new rough line
   roughLineLayer.batchDraw();
 }
 
 function clearRoughLines(roughLineLayer) {
-  roughLineLayer.destroyChildren();
+  roughLines.forEach(line => line.destroy());
+  roughLines.clear();
   roughLineLayer.draw();
 }
 

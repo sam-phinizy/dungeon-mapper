@@ -1,5 +1,3 @@
-// main.js
-
 import { snapToGrid } from './utils.js';
 import { initializeDoorPreview, updateDoorPreview, placeDoor, clearDoors, doors } from './doors.js';
 import { initializeGrid, drawGrid, toggleCell, renderGrid, dungeonMapperGrid } from './drawing.js';
@@ -9,6 +7,7 @@ import { initializeNotes, openNoteEditor, showNotePopover, getNotes, setNotes } 
 import { initializePreview, updatePenPreview, shapePreview, clearPreview } from './preview.js';
 import { makeDraggable } from './draggable.js';
 import { initializeRoughLinePreview, updateRoughLinePreview, placeRoughLine, clearRoughLines } from './roughLine.js';
+import { ColorEnum, ColorMap, getColorEnum, getColorName } from './colors.js';
 
 const CELL_SIZE = 20;
 const GRID_COLOR = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '#444444' : '#cccccc';
@@ -23,6 +22,27 @@ const state = {
   isDrawing: false,
   startPos: null
 };
+
+// Debounce function
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Debounced save function
+const debouncedSave = debounce(() => {
+  saveToLocalStorage();
+}, 1000);
+
+// Make saveToLocalStorage accessible in the global scope
+window.saveToLocalStorage = saveToLocalStorage;
 
 function init() {
   initializeStage();
@@ -99,8 +119,10 @@ function handleStageMouseDown(e) {
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
   if (state.currentTool === 'door') {
     placeDoor(doorLayer);
+    debouncedSave(); // Save after placing a door
   } else if (state.currentTool === 'roughLine') {
     placeRoughLine(roughLineLayer, CELL_SIZE);
+    debouncedSave(); // Save after placing a rough line
   } else if (state.currentTool === 'select') {
     startSelection(snappedPos, selectionLayer, CELL_SIZE);
   } else if (state.currentTool === 'pen') {
@@ -108,6 +130,7 @@ function handleStageMouseDown(e) {
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
     toggleCell(x, y, cellLayer, CELL_SIZE, getCurrentColor());
+    debouncedSave(); // Save after toggling a cell
   } else if (state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') {
     state.isDrawing = true;
     state.startPos = snappedPos;
@@ -116,7 +139,6 @@ function handleStageMouseDown(e) {
     const y = Math.floor(snappedPos.y / CELL_SIZE);
     openNoteEditor(x, y);
   }
-  saveToLocalStorage();
 }
 
 function handleStageMouseMove(e) {
@@ -132,6 +154,7 @@ function handleStageMouseMove(e) {
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
     toggleCell(x, y, cellLayer, CELL_SIZE, getCurrentColor());
+    debouncedSave(); // Save after toggling a cell
   } else if (state.currentTool == 'pen' && !state.isDrawing) {
     updatePenPreview(pos, CELL_SIZE, PREVIEW_COLOR);
   } else if ((state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') && state.isDrawing) {
@@ -155,9 +178,9 @@ function handleStageMouseUp() {
       state.isDrawing = false;
       state.startPos = null;
       clearPreview();
+      debouncedSave(); // Save after finishing drawing
     }
   }
-  saveToLocalStorage();
 }
 
 function drawShape(startPos, endPos, currentColor) {
@@ -258,20 +281,19 @@ function handleColorSchemeChange(e) {
   stage.batchDraw();
 }
 
+
 function loadFromLocalStorage() {
   const savedGrid = JSON.parse(localStorage.getItem('dungeonMapperGrid'));
   if (savedGrid) {
     dungeonMapperGrid.clear();
-    Object.entries(savedGrid).forEach(([key, value]) => {
-      dungeonMapperGrid.set(key, value);
+    Object.entries(savedGrid).forEach(([key, colorEnum]) => {
+      dungeonMapperGrid.set(key, parseInt(colorEnum));
     });
   }
 
   const savedNotes = JSON.parse(localStorage.getItem('dungeonMapperNotes'));
   if (savedNotes) {
     setNotes(savedNotes);
-    // Highlight cells with notes
-
   }
 
   const savedChatMessages = JSON.parse(localStorage.getItem('dungeonMapperChatMessages'));
@@ -280,10 +302,18 @@ function loadFromLocalStorage() {
   }
 }
 
+
 function saveToLocalStorage() {
-  localStorage.setItem('dungeonMapperGrid', JSON.stringify(Object.fromEntries(dungeonMapperGrid)));
+  const gridData = {};
+  for (const [key, colorEnum] of dungeonMapperGrid) {
+    gridData[key] = colorEnum;
+  }
+  console.log(`Saving to local storage: ${JSON.stringify(gridData)}`)
+
+  localStorage.setItem('dungeonMapperGrid', JSON.stringify(gridData));
   localStorage.setItem('dungeonMapperNotes', JSON.stringify(getNotes()));
   localStorage.setItem('dungeonMapperChatMessages', JSON.stringify(chatMessages));
+  console.log('Saved to local storage'); // Add this line for debugging
 }
 
 function displayLoadedChatMessages() {

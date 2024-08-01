@@ -26,7 +26,6 @@ function saveNote() {
         notes[key] = noteText;
         highlightNoteCell(currentNote.row, currentNote.col);
         closeNoteEditor();
-        window.saveToLocalStorage();
     }
 }
 

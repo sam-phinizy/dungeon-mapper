@@ -1,53 +1,42 @@
 // drawing.js
 
 import { snapToGrid } from './utils.js';
+import { ColorEnum, ColorMap } from './colors.js';
 
-const WALL_COLOR = '#1a1a1a';  // Dark gray color
-const PATH_COLOR = '#ffffff';
+const WALL_COLOR = ColorEnum.BLACK;  // Dark gray color
+const PATH_COLOR = ColorEnum.WHITE;
 
 const dungeonMapperGrid = new Map();
 
 function initializeGrid(stage, cellLayer, CELL_SIZE) {
-  // We don't need to pre-initialize the grid anymore
-  // The grid will be populated as cells are modified
   cellLayer.draw();
 }
 
 function drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR) {
-  // Grid lines removed
   gridLayer.draw();
 }
 
 function toggleCell(x, y, cellLayer, CELL_SIZE, currentColor) {
-  // if current color is empty then set it to path color
-  // else set it to wall color
-
-
-  if (!currentColor) {
-    currentColor = PATH_COLOR;
-  }
-
+  console.log(`Toggling cell at (${x}, ${y}) with color ${currentColor}`);
   const key = `${x},${y}`;
-  const currentValue = dungeonMapperGrid.get(key) || 0;
-  const newValue = 1 - currentValue;
-  // if cell is already in the grid just pop it
-  if (dungeonMapperGrid.has(key)) {
-    dungeonMapperGrid.delete(key);
-  } else {
-    dungeonMapperGrid.set(key, newValue);
+  const currentValue = dungeonMapperGrid.get(key);
 
+  if (currentValue === undefined) {
+    dungeonMapperGrid.set(key, currentColor);
+  } else {
+    dungeonMapperGrid.delete(key);
   }
 
   const cell = cellLayer.findOne(`#cell-${x}-${y}`);
   if (cell) {
-    cell.fill(currentColor);
+    cell.fill(ColorMap[currentColor]);
   } else {
     const newCell = new Konva.Rect({
       x: x * CELL_SIZE,
       y: y * CELL_SIZE,
       width: CELL_SIZE,
       height: CELL_SIZE,
-      fill: currentColor,
+      fill: ColorMap[currentColor],
       id: `cell-${x}-${y}`,
     });
     cellLayer.add(newCell);
@@ -63,14 +52,14 @@ function clearGrid(cellLayer) {
 
 function renderGrid(cellLayer, CELL_SIZE) {
   cellLayer.destroyChildren();
-  for (const [key, value] of dungeonMapperGrid) {
+  for (const [key, colorEnum] of dungeonMapperGrid) {
     const [x, y] = key.split(',').map(Number);
     const cell = new Konva.Rect({
       x: x * CELL_SIZE,
       y: y * CELL_SIZE,
       width: CELL_SIZE,
       height: CELL_SIZE,
-      fill: value ? PATH_COLOR : WALL_COLOR,
+      fill: ColorMap[colorEnum],
       id: `cell-${x}-${y}`,
     });
     cellLayer.add(cell);
