@@ -179,4 +179,77 @@ function clearEdges(edgeLayer) {
   edgeLayer.draw();
 }
 
-export { initializeEdgePreview, updateEdgePreview, placeEdge, clearEdges, edges };
+function loadEdgesFromStorage(savedEdges, edgeLayer) {
+  edges.clear();
+  savedEdges.forEach(([key, value]) => {
+    const [startX, startY, endX, endY] = key.split('-').flatMap(coord => coord.split(',').map(Number));
+    const edge = new Konva.Group();
+
+    if (value.type === 'door') {
+      const doorLine = new Konva.Line({
+        points: [startX, startY, endX, endY],
+        stroke: DOOR_COLOR,
+        strokeWidth: 5
+      });
+
+      const midX = (startX + endX) / 2;
+      const midY = (startY + endY) / 2;
+      const dx = endX - startX;
+      const dy = endY - startY;
+      const length = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+
+      const rectWidth = CELL_SIZE * 0.5;
+      const rectHeight = length * 0.33;
+      const rectX = midX - rectWidth / 2 * Math.cos(angle) + rectHeight / 2 * Math.sin(angle);
+      const rectY = midY - rectWidth / 2 * Math.sin(angle) - rectHeight / 2 * Math.cos(angle);
+
+      const doorRect = new Konva.Rect({
+        x: rectX,
+        y: rectY,
+        width: rectWidth,
+        height: rectHeight,
+        fill: DOOR_FILL_COLOR,
+        rotation: angle * 180 / Math.PI
+      });
+
+      edge.add(doorLine);
+      edge.add(doorRect);
+    } else if (value.type === 'roughLine') {
+      if (value.roughLineType === 'normal') {
+        const normalLine = new Konva.Line({
+          points: [startX, startY, endX, endY],
+          stroke: value.color,
+          strokeWidth: 2,
+          lineCap: 'round',
+          lineJoin: 'round'
+        });
+        edge.add(normalLine);
+      } else {
+        for (let i = 0; i < 3; i++) {
+          const offset = Math.random() * 2 - 1;
+          const roughSegment = new Konva.Line({
+            points: [
+              startX + offset,
+              startY + offset,
+              endX + offset,
+              endY + offset
+            ],
+            stroke: value.color,
+            strokeWidth: 1,
+            lineCap: 'round',
+            lineJoin: 'round',
+            tension: 0.5
+          });
+          edge.add(roughSegment);
+        }
+      }
+    }
+
+    edgeLayer.add(edge);
+    edges.set(key, edge);
+  });
+  edgeLayer.batchDraw();
+}
+
+export { initializeEdgePreview, updateEdgePreview, placeEdge, clearEdges, edges, loadEdgesFromStorage };
