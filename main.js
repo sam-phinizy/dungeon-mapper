@@ -1,20 +1,17 @@
 import { snapToGrid } from './utils.js';
-import { initializeDoorPreview, updateDoorPreview, placeDoor, clearDoors, doors } from './doors.js';
 import { initializeGrid, drawGrid, toggleCell, renderGrid, dungeonMapperGrid } from './drawing.js';
 import { startSelection, updateSelection, endSelection, clearSelection } from './selection.js';
 import { initializeToolbar, setTool, getCurrentColor } from './toolbar.js';
 import { initializeNotes, openNoteEditor, showNotePopover, getNotes, setNotes } from './notes.js';
 import { initializePreview, updatePenPreview, shapePreview, clearPreview } from './preview.js';
 import { makeDraggable } from './draggable.js';
-import { initializeRoughLinePreview, updateRoughLinePreview, placeRoughLine, clearRoughLines } from './roughLine.js';
-import { ColorEnum, ColorMap, getColorEnum, getColorName } from './colors.js';
 import { initializeEdgePreview, updateEdgePreview, placeEdge, clearEdges, edges } from './edges.js';
 
-const CELL_SIZE = 20;
+const CELL_SIZE = 32;
 const GRID_COLOR = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '#444444' : '#cccccc';
 const PREVIEW_COLOR = 'rgba(0, 255, 0, 0.5)';
 
-let stage, gridLayer, cellLayer, doorLayer, selectionLayer, previewLayer, roughLineLayer;
+let stage, gridLayer, cellLayer, edgeLayer, selectionLayer, previewLayer;
 let chatMessages = [];
 
 // Create a state object to hold shared state
