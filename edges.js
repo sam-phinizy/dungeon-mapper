@@ -94,6 +94,7 @@ function placeEdge(edgeLayer, CELL_SIZE) {
   }
 
   const edge = new Konva.Group();
+  let edgeData = {};
 
   if (state.currentTool === 'door') {
     const doorLine = new Konva.Line({
@@ -133,14 +134,17 @@ function placeEdge(edgeLayer, CELL_SIZE) {
 
     edge.add(doorLine);
     edge.add(doorRect);
+
+    edgeData = { type: 'door' };
   } else if (state.currentTool === 'roughLine') {
     const currentRoughLineType = getCurrentRoughLineType();
+    const currentColor = getCurrentColor();
 
     if (currentRoughLineType === 'normal') {
       // Create a single straight line for 'Normal' type
       const normalLine = new Konva.Line({
         points: points,
-        stroke: getCurrentColor(),
+        stroke: currentColor,
         strokeWidth: 2,
         lineCap: 'round',
         lineJoin: 'round'
@@ -157,7 +161,7 @@ function placeEdge(edgeLayer, CELL_SIZE) {
             points[2] + offset,
             points[3] + offset
           ],
-          stroke: getCurrentColor(),
+          stroke: currentColor,
           strokeWidth: 1,
           lineCap: 'round',
           lineJoin: 'round',
@@ -166,11 +170,22 @@ function placeEdge(edgeLayer, CELL_SIZE) {
         edge.add(roughSegment);
       }
     }
+
+    edgeData = {
+      type: 'roughLine',
+      roughLineType: currentRoughLineType,
+      color: currentColor
+    };
   }
 
   edgeLayer.add(edge);
-  edges.set(edgeKey, edge);
+  edges.set(edgeKey, edgeData);
   edgeLayer.batchDraw();
+
+  // Trigger save after adding an edge
+  if (typeof window.saveToLocalStorage === 'function') {
+    window.saveToLocalStorage();
+  }
 }
 
 function clearEdges(edgeLayer) {
@@ -179,9 +194,14 @@ function clearEdges(edgeLayer) {
   edgeLayer.draw();
 }
 
+
 function loadEdgesFromStorage(savedEdges, edgeLayer) {
+  console.log('Loading edges:', savedEdges);
   edges.clear();
+  edgeLayer.destroyChildren();
+
   savedEdges.forEach(([key, value]) => {
+    console.log('Loading edge:', key, value);
     const [startX, startY, endX, endY] = key.split('-').flatMap(coord => coord.split(',').map(Number));
     const edge = new Konva.Group();
 
@@ -247,9 +267,10 @@ function loadEdgesFromStorage(savedEdges, edgeLayer) {
     }
 
     edgeLayer.add(edge);
-    edges.set(key, edge);
+    edges.set(key, value);
   });
+
+  console.log('Loaded edges:', edges);
   edgeLayer.batchDraw();
 }
-
 export { initializeEdgePreview, updateEdgePreview, placeEdge, clearEdges, edges, loadEdgesFromStorage };
