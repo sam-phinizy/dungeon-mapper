@@ -10,7 +10,7 @@ import {
   startSelection,
   updateSelection,
   endSelection,
-  clearSelection,
+  getSelectedCells,
 } from "./selection.js";
 import { initializeToolbar, setTool, getCurrentColor } from "./toolbar.js";
 import {
@@ -34,6 +34,7 @@ import {
   loadEdgesFromStorage,
   edges,
 } from "./edges.js";
+import { ColorMap } from "./colors.js"; // Add this line
 
 const CELL_SIZE = 32;
 const GRID_COLOR =
@@ -440,6 +441,67 @@ function addMessage(message) {
   saveToLocalStorage();
 }
 
+function addToLibrary() {
+  const selectedCells = getSelectedCells(dungeonMapperGrid, CELL_SIZE);
+  if (selectedCells.length === 0) return;
+
+  const libraryItem = {
+    cells: selectedCells,
+    width:
+      Math.max(...selectedCells.map((cell) => cell.col)) -
+      Math.min(...selectedCells.map((cell) => cell.col)) +
+      1,
+    height:
+      Math.max(...selectedCells.map((cell) => cell.row)) -
+      Math.min(...selectedCells.map((cell) => cell.row)) +
+      1,
+  };
+
+  const library = JSON.parse(
+    localStorage.getItem("dungeonMapperLibrary") || "[]",
+  );
+  library.push(libraryItem);
+  localStorage.setItem("dungeonMapperLibrary", JSON.stringify(library));
+
+  renderLibraryItem(libraryItem);
+}
+
+function renderLibraryItem(item) {
+  const libraryContent = document.getElementById("library-content");
+  const itemElement = document.createElement("div");
+  itemElement.className = "library-item";
+
+  const miniStage = new Konva.Stage({
+    container: itemElement,
+    width: item.width * 10,
+    height: item.height * 10,
+  });
+
+  const miniLayer = new Konva.Layer();
+  miniStage.add(miniLayer);
+
+  item.cells.forEach((cell) => {
+    const rect = new Konva.Rect({
+      x: (cell.col - Math.min(...item.cells.map((c) => c.col))) * 10,
+      y: (cell.row - Math.min(...item.cells.map((c) => c.row))) * 10,
+      width: 10,
+      height: 10,
+      fill: ColorMap[cell.state],
+    });
+    miniLayer.add(rect);
+  });
+
+  miniLayer.draw();
+  libraryContent.appendChild(itemElement);
+}
+
+function loadLibrary() {
+  const library = JSON.parse(
+    localStorage.getItem("dungeonMapperLibrary") || "[]",
+  );
+  library.forEach(renderLibraryItem);
+}
+
 function initializeDOMElements() {
   console.log("initialize");
   // Make the floating tools window draggable by its title bar
@@ -503,6 +565,14 @@ function initializeDOMElements() {
       handleSendMessage();
     }
   });
+
+  const addToLibraryButton = document.createElement("button");
+  addToLibraryButton.textContent = "Add to Library";
+  addToLibraryButton.className = "btn btn-primary";
+  addToLibraryButton.addEventListener("click", addToLibrary);
+  document.getElementById("library-header").appendChild(addToLibraryButton);
+
+  loadLibrary();
 }
 
 // Initialize marked with some options for safety

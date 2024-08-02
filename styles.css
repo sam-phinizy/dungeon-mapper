@@ -37,12 +37,16 @@ body {
 }
 
 #library-content {
-    flex: 1;
-    overflow-x: auto;
     display: flex;
-    padding: 10px;
-}
+    flex-wrap: wrap;
+    gap: 10px;
+  }
 
+.library-item {
+    border: 1px solid #ccc;
+    padding: 5px;
+    cursor: pointer;
+  }
 #sidebar-resizer {
     width: 5px;
     background-color: #dee2e6;

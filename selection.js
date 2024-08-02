@@ -1,8 +1,8 @@
 // selection.js
 
-import { snapToGrid } from './utils.js';
+import { snapToGrid } from "./utils.js";
 
-const SELECTION_COLOR = 'rgba(0, 0, 255, 0.3)';
+const SELECTION_COLOR = "rgba(0, 0, 255, 0.3)";
 
 let isSelecting = false;
 let selectionRect;
@@ -46,9 +46,19 @@ function endSelection() {
   isSelecting = false;
 }
 
-function getSelectedCells(grid, CELL_SIZE) {
+function clearSelection() {
+  if (selectionRect) {
+    selectionRect.destroy();
+    selectionRect = null;
+    if (selectionLayer) {
+      selectionLayer.draw();
+    }
+  }
+}
+
+function getSelectedCells(dungeonMapperGrid, CELL_SIZE) {
   if (!selectionRect) return [];
-  
+
   const x = selectionRect.x();
   const y = selectionRect.y();
   const width = selectionRect.width();
@@ -62,22 +72,19 @@ function getSelectedCells(grid, CELL_SIZE) {
   const selectedCells = [];
   for (let row = startRow; row <= endRow; row++) {
     for (let col = startCol; col <= endCol; col++) {
-      if (row >= 0 && row < grid.length && col >= 0 && col < grid[0].length) {
-        selectedCells.push({ row, col, state: grid[row][col] });
+      const key = `${col},${row}`;
+      if (dungeonMapperGrid.has(key)) {
+        selectedCells.push({ row, col, state: dungeonMapperGrid.get(key) });
       }
     }
   }
   return selectedCells;
 }
 
-function clearSelection() {
-  if (selectionRect) {
-    selectionRect.destroy();
-    selectionRect = null;
-    if (selectionLayer) {
-      selectionLayer.draw();
-    }
-  }
-}
-
-export { startSelection, updateSelection, endSelection, getSelectedCells, clearSelection };
+export {
+  startSelection,
+  updateSelection,
+  endSelection,
+  getSelectedCells,
+  clearSelection,
+};
