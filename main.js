@@ -1,24 +1,55 @@
-import { snapToGrid } from './utils.js';
-import { initializeGrid, drawGrid, toggleCell, renderGrid, dungeonMapperGrid } from './drawing.js';
-import { startSelection, updateSelection, endSelection, clearSelection } from './selection.js';
-import { initializeToolbar, setTool, getCurrentColor } from './toolbar.js';
-import { initializeNotes, openNoteEditor, showNotePopover, getNotes, setNotes } from './notes.js';
-import { initializePreview, updatePenPreview, shapePreview, clearPreview } from './preview.js';
-import { makeDraggable } from './draggable.js';
-import { initializeEdgePreview, updateEdgePreview, placeEdge, loadEdgesFromStorage, edges } from './edges.js';
+import { snapToGrid } from "./utils.js";
+import {
+  initializeGrid,
+  drawGrid,
+  toggleCell,
+  renderGrid,
+  dungeonMapperGrid,
+} from "./drawing.js";
+import {
+  startSelection,
+  updateSelection,
+  endSelection,
+  clearSelection,
+} from "./selection.js";
+import { initializeToolbar, setTool, getCurrentColor } from "./toolbar.js";
+import {
+  initializeNotes,
+  openNoteEditor,
+  showNotePopover,
+  getNotes,
+  setNotes,
+} from "./notes.js";
+import {
+  initializePreview,
+  updatePenPreview,
+  shapePreview,
+  clearPreview,
+} from "./preview.js";
+import { makeDraggable } from "./draggable.js";
+import {
+  initializeEdgePreview,
+  updateEdgePreview,
+  placeEdge,
+  loadEdgesFromStorage,
+  edges,
+} from "./edges.js";
 
 const CELL_SIZE = 32;
-const GRID_COLOR = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? '#444444' : '#cccccc';
-const PREVIEW_COLOR = 'rgba(0, 255, 0, 0.5)';
+const GRID_COLOR =
+  window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "#444444"
+    : "#cccccc";
+const PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
 
 let stage, gridLayer, cellLayer, edgeLayer, selectionLayer, previewLayer;
 let chatMessages = [];
 
 // Create a state object to hold shared state
 const state = {
-  currentTool: 'draw',
+  currentTool: "draw",
   isDrawing: false,
-  startPos: null
+  startPos: null,
 };
 
 // Debounce function
@@ -42,7 +73,7 @@ const debouncedSave = debounce(() => {
 // Make saveToLocalStorage accessible in the global scope
 window.saveToLocalStorage = saveToLocalStorage;
 
-function init() {
+const init = () => {
   initializeStage();
   initializeGrid(stage, cellLayer, CELL_SIZE);
   initializeEdgePreview(previewLayer);
@@ -50,34 +81,27 @@ function init() {
   initializeNotes();
   initializePreview(previewLayer);
 
-  stage.on('mousedown touchstart', handleStageMouseDown);
-  stage.on('mousemove touchmove', handleStageMouseMove);
-  stage.on('mouseup touchend', handleStageMouseUp);
+  stage.on("mousedown touchstart", handleStageMouseDown);
+  stage.on("mousemove touchmove", handleStageMouseMove);
+  stage.on("mouseup touchend", handleStageMouseUp);
 
-  // Load saved data from local storage
   loadFromLocalStorage();
-
-  // Render the grid based on loaded data
   renderGrid(cellLayer, CELL_SIZE);
-  // Display loaded chat messages
   displayLoadedChatMessages();
 
-  // Add keyboard event listener for tool switching
-  document.addEventListener('keydown', handleKeyboardShortcuts);
+  document.addEventListener("keydown", handleKeyboardShortcuts);
+  window.addEventListener("resize", handleResize);
+  window
+    .matchMedia("(prefers-color-scheme: dark)")
+    .addListener(handleColorSchemeChange);
 
-  window.addEventListener('resize', handleResize);
-
-  // Listen for changes in color scheme
-  window.matchMedia('(prefers-color-scheme: dark)').addListener(handleColorSchemeChange);
-
-  setTool('pen'); // Set initial tool to pen
-
+  setTool("pen");
   initializeDOMElements();
-}
+};
 
-function initializeStage() {
+const initializeStage = () => {
   stage = new Konva.Stage({
-    container: 'canvas-container',
+    container: "canvas-container",
     width: calculateAvailableWidth(),
     height: window.innerHeight,
   });
@@ -88,67 +112,92 @@ function initializeStage() {
   selectionLayer = new Konva.Layer();
   previewLayer = new Konva.Layer();
 
-  stage.add(gridLayer);
-  stage.add(cellLayer);
-  stage.add(edgeLayer);
-  stage.add(selectionLayer);
-  stage.add(previewLayer);
+  stage.add(gridLayer, cellLayer, edgeLayer, selectionLayer, previewLayer);
 
-  // Make these layers globally accessible
-  window.stage = stage;
-  window.gridLayer = gridLayer;
-  window.cellLayer = cellLayer;
-  window.edgeLayer = edgeLayer;
-  window.selectionLayer = selectionLayer;
-  window.CELL_SIZE = CELL_SIZE;
-  window.state = state;
-}
+  Object.assign(window, {
+    stage,
+    gridLayer,
+    cellLayer,
+    edgeLayer,
+    selectionLayer,
+    CELL_SIZE,
+    state,
+  });
+};
 
 function calculateAvailableWidth() {
   return window.innerWidth;
 }
 
-function handleStageMouseDown(e) {
+const handleStageMouseDown = (e) => {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  if (state.currentTool === 'door' || state.currentTool === 'roughLine') {
-    placeEdge(edgeLayer, CELL_SIZE);
-    debouncedSave(); // Save after placing an edge
-  } else if (state.currentTool === 'select') {
-    startSelection(snappedPos, selectionLayer, CELL_SIZE);
-  } else if (state.currentTool === 'pen') {
-    state.isDrawing = true;
-    const x = Math.floor(snappedPos.x / CELL_SIZE);
-    const y = Math.floor(snappedPos.y / CELL_SIZE);
-    toggleCell(x, y, cellLayer, CELL_SIZE, getCurrentColor());
-    debouncedSave(); // Save after toggling a cell
-  } else if (state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') {
-    state.isDrawing = true;
-    state.startPos = snappedPos;
-  } else if (state.currentTool === 'notes') {
-    const x = Math.floor(snappedPos.x / CELL_SIZE);
-    const y = Math.floor(snappedPos.y / CELL_SIZE);
-    openNoteEditor(x, y);
+
+  switch (state.currentTool) {
+    case "door":
+    case "roughLine":
+      placeEdge(edgeLayer, CELL_SIZE);
+      debouncedSave();
+      break;
+    case "select":
+      startSelection(snappedPos, selectionLayer, CELL_SIZE);
+      break;
+    case "pen":
+      state.isDrawing = true;
+      const { x, y } = snappedPos;
+      toggleCell(
+        Math.floor(x / CELL_SIZE),
+        Math.floor(y / CELL_SIZE),
+        cellLayer,
+        CELL_SIZE,
+        getCurrentColor(),
+      );
+      debouncedSave();
+      break;
+    case "rect":
+    case "circle":
+    case "line":
+      state.isDrawing = true;
+      state.startPos = snappedPos;
+      break;
+    case "notes":
+      const { x: noteX, y: noteY } = snappedPos;
+      openNoteEditor(
+        Math.floor(noteX / CELL_SIZE),
+        Math.floor(noteY / CELL_SIZE),
+      );
+      break;
   }
-}
+};
 
 function handleStageMouseMove(e) {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  if (state.currentTool === 'door' || state.currentTool === 'roughLine') {
+  if (state.currentTool === "door" || state.currentTool === "roughLine") {
     updateEdgePreview(pos, CELL_SIZE, state);
-  } else if (state.currentTool === 'select') {
+  } else if (state.currentTool === "select") {
     updateSelection(pos, CELL_SIZE);
-  } else if (state.currentTool === 'pen' && state.isDrawing) {
+  } else if (state.currentTool === "pen" && state.isDrawing) {
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
     toggleCell(x, y, cellLayer, CELL_SIZE, getCurrentColor());
     debouncedSave(); // Save after toggling a cell
-  } else if (state.currentTool == 'pen' && !state.isDrawing) {
+  } else if (state.currentTool == "pen" && !state.isDrawing) {
     updatePenPreview(pos, CELL_SIZE, PREVIEW_COLOR);
-  } else if ((state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') && state.isDrawing) {
-    shapePreview(state.startPos, snappedPos, state.currentTool, CELL_SIZE, PREVIEW_COLOR);
-  } else if (state.currentTool === 'notes') {
+  } else if (
+    (state.currentTool === "rect" ||
+      state.currentTool === "circle" ||
+      state.currentTool === "line") &&
+    state.isDrawing
+  ) {
+    shapePreview(
+      state.startPos,
+      snappedPos,
+      state.currentTool,
+      CELL_SIZE,
+      PREVIEW_COLOR,
+    );
+  } else if (state.currentTool === "notes") {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
     showNotePopover(row, col, pos);
@@ -156,12 +205,21 @@ function handleStageMouseMove(e) {
 }
 
 function handleStageMouseUp() {
-  if (state.currentTool === 'select') {
+  if (state.currentTool === "select") {
     endSelection();
-  } else if (state.currentTool === 'pen' || state.currentTool === 'rect' || state.currentTool === 'circle' || state.currentTool === 'line') {
+  } else if (
+    state.currentTool === "pen" ||
+    state.currentTool === "rect" ||
+    state.currentTool === "circle" ||
+    state.currentTool === "line"
+  ) {
     if (state.isDrawing) {
-      if (state.currentTool !== 'pen') {
-        const endPos = snapToGrid(stage.getPointerPosition().x, stage.getPointerPosition().y, CELL_SIZE);
+      if (state.currentTool !== "pen") {
+        const endPos = snapToGrid(
+          stage.getPointerPosition().x,
+          stage.getPointerPosition().y,
+          CELL_SIZE,
+        );
         drawShape(state.startPos, endPos, getCurrentColor());
       }
       state.isDrawing = false;
@@ -178,25 +236,47 @@ function drawShape(startPos, endPos, currentColor) {
   const endCol = Math.floor(endPos.x / CELL_SIZE);
   const endRow = Math.floor(endPos.y / CELL_SIZE);
 
-  if (state.currentTool === 'rect') {
-    for (let row = Math.min(startRow, endRow); row <= Math.max(startRow, endRow); row++) {
-      for (let col = Math.min(startCol, endCol); col <= Math.max(startCol, endCol); col++) {
+  if (state.currentTool === "rect") {
+    for (
+      let row = Math.min(startRow, endRow);
+      row <= Math.max(startRow, endRow);
+      row++
+    ) {
+      for (
+        let col = Math.min(startCol, endCol);
+        col <= Math.max(startCol, endCol);
+        col++
+      ) {
         toggleCell(col, row, cellLayer, CELL_SIZE, currentColor);
       }
     }
-  } else if (state.currentTool === 'circle') {
+  } else if (state.currentTool === "circle") {
     const centerRow = (startRow + endRow) / 2;
     const centerCol = (startCol + endCol) / 2;
-    const radius = Math.sqrt(Math.pow(endRow - startRow, 2) + Math.pow(endCol - startCol, 2)) / 2;
+    const radius =
+      Math.sqrt(
+        Math.pow(endRow - startRow, 2) + Math.pow(endCol - startCol, 2),
+      ) / 2;
 
-    for (let row = Math.floor(centerRow - radius); row <= Math.ceil(centerRow + radius); row++) {
-      for (let col = Math.floor(centerCol - radius); col <= Math.ceil(centerCol + radius); col++) {
-        if (Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2) <= Math.pow(radius, 2)) {
+    for (
+      let row = Math.floor(centerRow - radius);
+      row <= Math.ceil(centerRow + radius);
+      row++
+    ) {
+      for (
+        let col = Math.floor(centerCol - radius);
+        col <= Math.ceil(centerCol + radius);
+        col++
+      ) {
+        if (
+          Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2) <=
+          Math.pow(radius, 2)
+        ) {
           toggleCell(col, row, cellLayer, CELL_SIZE, currentColor);
         }
       }
     }
-  } else if (state.currentTool === 'line') {
+  } else if (state.currentTool === "line") {
     const dx = Math.abs(endCol - startCol);
     const dy = Math.abs(endRow - startRow);
     const sx = startCol < endCol ? 1 : -1;
@@ -227,27 +307,43 @@ function drawShape(startPos, endPos, currentColor) {
 
 function handleKeyboardShortcuts(event) {
   // Ignore keyboard shortcuts when typing in input fields
-  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+  if (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA") {
     return;
   }
 
   switch (event.key.toLowerCase()) {
-    case 'p': setTool('pen'); break;
-    case 'r': setTool('rect'); break;
-    case 'c': setTool('circle'); break;
-    case 'l': setTool('line'); break;
-    case 's': setTool('select'); break;
-    case 'd': setTool('door'); break;
-    case 'n': setTool('notes'); break;
-    case 'u': setTool('roughLine'); break; // Add shortcut for rough line tool
+    case "p":
+      setTool("pen");
+      break;
+    case "r":
+      setTool("rect");
+      break;
+    case "c":
+      setTool("circle");
+      break;
+    case "l":
+      setTool("line");
+      break;
+    case "s":
+      setTool("select");
+      break;
+    case "d":
+      setTool("door");
+      break;
+    case "n":
+      setTool("notes");
+      break;
+    case "u":
+      setTool("roughLine");
+      break; // Add shortcut for rough line tool
   }
 }
 
-
 function handleResize() {
-  const sidebar = document.getElementById('sidebar');
-  const resizer = document.getElementById('sidebar-resizer');
-  const newWidth = calculateAvailableWidth() - sidebar.offsetWidth - resizer.offsetWidth;
+  const sidebar = document.getElementById("sidebar");
+  const resizer = document.getElementById("sidebar-resizer");
+  const newWidth =
+    calculateAvailableWidth() - sidebar.offsetWidth - resizer.offsetWidth;
   const newHeight = window.innerHeight - 56; // Adjust for navbar height
   stage.width(newWidth);
   stage.height(newHeight);
@@ -266,35 +362,33 @@ function handleResize() {
   stage.batchDraw();
 }
 
-
 function handleColorSchemeChange(e) {
   stage.batchDraw();
 }
-
-
-
-
 
 function saveToLocalStorage() {
   const gridData = {};
   for (const [key, colorEnum] of dungeonMapperGrid) {
     gridData[key] = colorEnum;
   }
-  console.log('Saving grid:', gridData);
-  console.log('Saving notes:', getNotes());
-  console.log('Saving chat messages:', chatMessages);
-  console.log('Saving edges:', Array.from(edges));
+  console.log("Saving grid:", gridData);
+  console.log("Saving notes:", getNotes());
+  console.log("Saving chat messages:", chatMessages);
+  console.log("Saving edges:", Array.from(edges));
 
-  localStorage.setItem('dungeonMapperGrid', JSON.stringify(gridData));
-  localStorage.setItem('dungeonMapperNotes', JSON.stringify(getNotes()));
-  localStorage.setItem('dungeonMapperChatMessages', JSON.stringify(chatMessages));
-  localStorage.setItem('dungeonMapperEdges', JSON.stringify(Array.from(edges)));
-  console.log('Saved to local storage');
+  localStorage.setItem("dungeonMapperGrid", JSON.stringify(gridData));
+  localStorage.setItem("dungeonMapperNotes", JSON.stringify(getNotes()));
+  localStorage.setItem(
+    "dungeonMapperChatMessages",
+    JSON.stringify(chatMessages),
+  );
+  localStorage.setItem("dungeonMapperEdges", JSON.stringify(Array.from(edges)));
+  console.log("Saved to local storage");
 }
 
 function loadFromLocalStorage() {
-  const savedGrid = JSON.parse(localStorage.getItem('dungeonMapperGrid'));
-  console.log('Loaded grid:', savedGrid);
+  const savedGrid = JSON.parse(localStorage.getItem("dungeonMapperGrid"));
+  console.log("Loaded grid:", savedGrid);
   if (savedGrid) {
     dungeonMapperGrid.clear();
     Object.entries(savedGrid).forEach(([key, colorEnum]) => {
@@ -302,53 +396,56 @@ function loadFromLocalStorage() {
     });
   }
 
-  const savedNotes = JSON.parse(localStorage.getItem('dungeonMapperNotes'));
-  console.log('Loaded notes:', savedNotes);
+  const savedNotes = JSON.parse(localStorage.getItem("dungeonMapperNotes"));
+  console.log("Loaded notes:", savedNotes);
   if (savedNotes) {
     setNotes(savedNotes);
   }
 
-  const savedChatMessages = JSON.parse(localStorage.getItem('dungeonMapperChatMessages'));
-  console.log('Loaded chat messages:', savedChatMessages);
+  const savedChatMessages = JSON.parse(
+    localStorage.getItem("dungeonMapperChatMessages"),
+  );
+  console.log("Loaded chat messages:", savedChatMessages);
   if (savedChatMessages) {
     chatMessages = savedChatMessages;
   }
 
-  const savedEdges = JSON.parse(localStorage.getItem('dungeonMapperEdges'));
-  console.log('Loaded edges:', savedEdges);
+  const savedEdges = JSON.parse(localStorage.getItem("dungeonMapperEdges"));
+  console.log("Loaded edges:", savedEdges);
   if (savedEdges) {
-    loadEdgesFromStorage(savedEdges, edgeLayer);
+    loadEdgesFromStorage(savedEdges, edgeLayer, CELL_SIZE);
   }
 }
 
 function displayLoadedChatMessages() {
-  const chatMessagesContainer = document.getElementById('chat-messages');
-  chatMessagesContainer.innerHTML = '';
-  chatMessages.forEach(message => {
+  const chatMessagesContainer = document.getElementById("chat-messages");
+  chatMessagesContainer.innerHTML = "";
+  chatMessages.forEach((message) => {
     addMessage(message);
   });
 }
 
 function addMessage(message) {
-  const messageElement = document.createElement('div');
-  messageElement.className = 'chat-message';
+  const messageElement = document.createElement("div");
+  messageElement.className = "chat-message";
   messageElement.innerHTML = marked.parse(message);
-  document.getElementById('chat-messages').appendChild(messageElement);
-  document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+  document.getElementById("chat-messages").appendChild(messageElement);
+  document.getElementById("chat-messages").scrollTop =
+    document.getElementById("chat-messages").scrollHeight;
 
   chatMessages.push(message);
   saveToLocalStorage();
 }
 
 function initializeDOMElements() {
-  console.log("initialize")
+  console.log("initialize");
   // Make the floating tools window draggable by its title bar
-  const floatingTools = document.getElementById('floating-tools');
-  const floatingToolsHandle = floatingTools.querySelector('.window-title');
+  const floatingTools = document.getElementById("floating-tools");
+  const floatingToolsHandle = floatingTools.querySelector(".window-title");
 
   // Make the note editor draggable by its title bar
-  const noteEditor = document.getElementById('note-editor');
-  const noteEditorHandle = noteEditor.querySelector('.window-title');
+  const noteEditor = document.getElementById("note-editor");
+  const noteEditorHandle = noteEditor.querySelector(".window-title");
   makeDraggable(floatingTools, floatingToolsHandle);
   makeDraggable(noteEditor, noteEditorHandle);
   // Ensure the makeDraggable function is called after a short delay
@@ -358,21 +455,21 @@ function initializeDOMElements() {
   }, 100);
 
   // Sidebar resizing functionality
-  const resizer = document.getElementById('sidebar-resizer');
-  const sidebar = document.getElementById('sidebar');
-  const canvasContainer = document.getElementById('canvas-container');
+  const resizer = document.getElementById("sidebar-resizer");
+  const sidebar = document.getElementById("sidebar");
+  const canvasContainer = document.getElementById("canvas-container");
 
   let isResizing = false;
 
-  resizer.addEventListener('mousedown', (e) => {
+  resizer.addEventListener("mousedown", (e) => {
     isResizing = true;
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', stopResize);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", stopResize);
   });
 
   function handleMouseMove(e) {
     if (!isResizing) return;
-    const containerWidth = document.querySelector('.content').offsetWidth;
+    const containerWidth = document.querySelector(".content").offsetWidth;
     const newWidth = containerWidth - e.clientX;
     sidebar.style.width = `${newWidth}px`;
     canvasContainer.style.width = `${containerWidth - newWidth - 5}px`; // 5px for resizer width
@@ -381,24 +478,24 @@ function initializeDOMElements() {
 
   function stopResize() {
     isResizing = false;
-    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener("mousemove", handleMouseMove);
   }
 
   // Chat functionality
-  const chatInput = document.getElementById('chat-input');
-  const chatSend = document.getElementById('chat-send');
+  const chatInput = document.getElementById("chat-input");
+  const chatSend = document.getElementById("chat-send");
 
   function handleSendMessage() {
     const message = chatInput.value.trim();
     if (message) {
       addMessage(message);
-      chatInput.value = '';
+      chatInput.value = "";
     }
   }
 
-  chatSend.addEventListener('click', handleSendMessage);
-  chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+  chatSend.addEventListener("click", handleSendMessage);
+  chatInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -408,7 +505,7 @@ function initializeDOMElements() {
 // Initialize marked with some options for safety
 marked.setOptions({
   sanitize: true,
-  breaks: true
+  breaks: true,
 });
 
 init();
