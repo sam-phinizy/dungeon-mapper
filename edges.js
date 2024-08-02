@@ -4,7 +4,7 @@ import { getCurrentColor, getCurrentRoughLineType } from './toolbar.js';
 import { ColorMap } from './colors.js';
 
 const DOOR_COLOR = '#8B4513';
-const DOOR_FILL_COLOR = '#DEB887';
+const DOOR_FILL_COLOR = '#FFFFFF';
 const EDGE_PREVIEW_COLOR = 'rgba(0, 255, 0, 0.5)';
 
 let edgePreview;
@@ -97,7 +97,7 @@ function placeEdge(edgeLayer, CELL_SIZE) {
   if (state.currentTool === 'door') {
     const doorLine = new Konva.Line({
       points: points,
-      stroke: DOOR_COLOR,
+      stroke: 'black',
       strokeWidth: 5
     });
 
@@ -123,6 +123,8 @@ function placeEdge(edgeLayer, CELL_SIZE) {
       width: rectWidth,
       height: rectHeight,
       fill: DOOR_FILL_COLOR,
+      stroke: 'black',
+      strokeWidth: 2,
       rotation: angle * 180 / Math.PI
     });
 
@@ -143,6 +145,55 @@ function placeEdge(edgeLayer, CELL_SIZE) {
         lineJoin: 'round'
       });
       edge.add(normalLine);
+    } else if (currentRoughLineType === 'blocks') {
+      const [startX, startY, endX, endY] = points;
+      const dx = endX - startX;
+      const dy = endY - startY;
+      const angle = Math.atan2(dy, dx);
+      const length = Math.sqrt(dx * dx + dy * dy);
+
+      // Main wall line
+      const mainLine = new Konva.Line({
+        points: points,
+        stroke: ColorMap[currentColor],
+        strokeWidth: 3,
+        lineCap: 'square',
+        lineJoin: 'miter'
+      });
+      edge.add(mainLine);
+
+      // Blocks
+      const blockSize = CELL_SIZE / 4;
+      const numBlocks = Math.floor(length / blockSize);
+      for (let i = 0; i < numBlocks; i++) {
+        const blockX = startX + Math.cos(angle) * i * blockSize;
+        const blockY = startY + Math.sin(angle) * i * blockSize;
+        const block = new Konva.Rect({
+          x: blockX,
+          y: blockY,
+          width: blockSize,
+          height: blockSize / 2,
+          fill: 'white',
+          stroke: ColorMap[currentColor],
+          strokeWidth: 1,
+          rotation: angle * 180 / Math.PI,
+          offsetY: blockSize / 4
+        });
+        edge.add(block);
+      }
+
+      // Pencil-like line on the other side
+      const pencilLine = new Konva.Line({
+        points: points,
+        stroke: ColorMap[currentColor],
+        strokeWidth: 1,
+        lineCap: 'round',
+        lineJoin: 'round',
+        tension: 0.5,
+        offsetX: Math.sin(angle) * blockSize / 2,
+        offsetY: -Math.cos(angle) * blockSize / 2
+      });
+      edge.add(pencilLine);
     } else {
       for (let i = 0; i < 3; i++) {
         const offset = Math.random() * 2 - 1;
@@ -184,7 +235,11 @@ function clearEdges(edgeLayer) {
   edgeLayer.draw();
 }
 
-
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 function loadEdgesFromStorage(savedEdges, edgeLayer) {
   console.log('Loading edges:', savedEdges);
@@ -192,7 +247,6 @@ function loadEdgesFromStorage(savedEdges, edgeLayer) {
   edgeLayer.destroyChildren();
 
   savedEdges.forEach(([key, value]) => {
-    console.log('Loading edge:', key, value);
     const [startX, startY, endX, endY] = key.split('-').flatMap(coord => coord.split(',').map(Number));
     const edge = new Konva.Group();
 
@@ -236,6 +290,54 @@ function loadEdgesFromStorage(savedEdges, edgeLayer) {
           lineJoin: 'round'
         });
         edge.add(normalLine);
+      } else if (value.roughLineType === 'blocks') {
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const angle = Math.atan2(dy, dx);
+        const length = Math.sqrt(dx * dx + dy * dy);
+
+        // Main wall line
+        const mainLine = new Konva.Line({
+          points: [startX, startY, endX, endY],
+          stroke: ColorMap[value.color],
+          strokeWidth: 3,
+          lineCap: 'square',
+          lineJoin: 'miter'
+        });
+        edge.add(mainLine);
+
+        // Blocks
+        const blockSize = CELL_SIZE / getRandomInt(3, 6);
+        const numBlocks = Math.floor(length / blockSize);
+        for (let i = 0; i < numBlocks; i++) {
+          const blockX = startX + Math.cos(angle) * i * blockSize;
+          const blockY = startY + Math.sin(angle) * i * blockSize;
+          const block = new Konva.Rect({
+            x: blockX,
+            y: blockY,
+            width: blockSize,
+            height: blockSize / 2,
+            fill: 'white',
+            stroke: ColorMap[value.color],
+            strokeWidth: 1,
+            rotation: angle * 180 / Math.PI,
+            offsetY: blockSize / 4
+          });
+          edge.add(block);
+        }
+
+        // Pencil-like line on the other side
+        const pencilLine = new Konva.Line({
+          points: [startX, startY, endX, endY],
+          stroke: ColorMap[value.color],
+          strokeWidth: 1,
+          lineCap: 'round',
+          lineJoin: 'round',
+          tension: 0.5,
+          offsetX: Math.sin(angle) * blockSize / 2,
+          offsetY: -Math.cos(angle) * blockSize / 2
+        });
+        edge.add(pencilLine);
       } else {
         for (let i = 0; i < 3; i++) {
           const offset = Math.random() * 2 - 1;

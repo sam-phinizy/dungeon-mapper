@@ -5,15 +5,37 @@ let currentColor = ColorEnum.WHITE; // Default color
 let currentRoughLineType = 'standard'; // Default rough line type
 
 function initializeToolbar() {
-    document.getElementById('penTool').addEventListener('click', () => setTool('pen'));
-    document.getElementById('rectTool').addEventListener('click', () => setTool('rect'));
-    document.getElementById('circleTool').addEventListener('click', () => setTool('circle'));
-    document.getElementById('lineTool').addEventListener('click', () => setTool('line'));
-    document.getElementById('selectTool').addEventListener('click', () => setTool('select'));
-    document.getElementById('doorTool').addEventListener('click', () => setTool('door'));
-    document.getElementById('notesTool').addEventListener('click', () => setTool('notes'));
-    document.getElementById('roughLineTool').addEventListener('click', () => setTool('roughLine'));
-    document.getElementById('downloadTool').addEventListener('click', downloadCanvas);
+    const toolbar = document.getElementById('floating-tools');
+
+    const tools = [
+        { id: 'penTool', icon: 'fi-rr-pencil', title: 'Pen Tool' },
+        { id: 'rectTool', icon: 'fi-rr-square', title: 'Rectangle Tool' },
+        { id: 'circleTool', icon: 'fi-rr-circle', title: 'Circle Tool' },
+        { id: 'lineTool', icon: 'fi-rr-line-width', title: 'Line Tool' },
+        { id: 'selectTool', icon: 'fi-rr-cursor', title: 'Select Tool' },
+        { id: 'doorTool', icon: 'fi-rr-door-open', title: 'Door Tool' },
+        { id: 'notesTool', icon: 'fi-rr-note', title: 'Notes Tool' },
+        { id: 'roughLineTool', icon: 'fi-rr-edit', title: 'Rough Line Tool' },
+        { id: 'downloadTool', icon: 'fi-rr-download', title: 'Download Canvas' },
+    ];
+
+    tools.forEach(tool => {
+        const button = document.createElement('button');
+        button.id = tool.id;
+        button.className = 'btn btn-outline-secondary mb-2';
+        button.title = tool.title;
+        button.innerHTML = `<i class="fi ${tool.icon}"></i>`;
+        button.addEventListener('click', () => setTool(tool.id.replace('Tool', '')));
+        toolbar.appendChild(button);
+    });
+
+    const colorButton = document.createElement('button');
+    colorButton.id = 'colorTool';
+    colorButton.className = 'btn btn-outline-secondary mb-2';
+    colorButton.title = 'Color Picker';
+    colorButton.innerHTML = '<i class="fi fi-rr-fill"></i>';
+    colorButton.addEventListener('click', toggleColorPicker);
+    toolbar.appendChild(colorButton);
 
     initializeColorPicker();
     initializeRoughLineDropdown();
@@ -22,22 +44,15 @@ function initializeToolbar() {
 function initializeColorPicker() {
     const colorPicker = document.createElement('div');
     colorPicker.id = 'color-picker';
-    colorPicker.style.display = 'flex';
-    colorPicker.style.flexWrap = 'wrap';
-    colorPicker.style.justifyContent = 'center';
-    colorPicker.style.marginTop = '10px';
 
     Object.entries(ColorMap).forEach(([colorEnum, hexColor]) => {
         const colorButton = document.createElement('button');
-        colorButton.style.width = '30px';
-        colorButton.style.height = '30px';
         colorButton.style.backgroundColor = hexColor;
-        colorButton.style.margin = '2px';
-        colorButton.style.border = '2px solid transparent';
-        colorButton.style.cursor = 'pointer';
-        colorButton.style.borderRadius = '50%';
         colorButton.dataset.color = colorEnum;
-        colorButton.addEventListener('click', () => setColor(parseInt(colorEnum)));
+        colorButton.addEventListener('click', () => {
+            setColor(parseInt(colorEnum));
+            toggleColorPicker();
+        });
         colorPicker.appendChild(colorButton);
     });
 
@@ -47,26 +62,21 @@ function initializeColorPicker() {
     setColor(ColorEnum.WHITE);
 }
 
+function toggleColorPicker() {
+    const colorPicker = document.getElementById('color-picker');
+    colorPicker.style.display = colorPicker.style.display === 'none' ? 'block' : 'none';
+}
+
 function initializeRoughLineDropdown() {
     const roughLineToolButton = document.getElementById('roughLineTool');
     const dropdownContent = document.createElement('div');
     dropdownContent.className = 'dropdown-content';
-    dropdownContent.style.display = 'none';
-    dropdownContent.style.position = 'absolute';
-    dropdownContent.style.backgroundColor = '#f9f9f9';
-    dropdownContent.style.minWidth = '120px';
-    dropdownContent.style.boxShadow = '0px 8px 16px 0px rgba(0,0,0,0.2)';
-    dropdownContent.style.zIndex = '1';
 
     const options = ['Normal', 'Lightly Rough', 'Wavy', 'Jagged', 'Blocks'];
     options.forEach(option => {
         const item = document.createElement('a');
         item.href = '#';
         item.textContent = option;
-        item.style.color = 'black';
-        item.style.padding = '12px 16px';
-        item.style.textDecoration = 'none';
-        item.style.display = 'block';
         item.addEventListener('click', (e) => {
             e.preventDefault();
             setRoughLineType(option.toLowerCase());
@@ -108,20 +118,9 @@ function setTool(tool) {
 
 function setColor(colorEnum) {
     currentColor = colorEnum;
-
-    // Remove highlight from all color buttons
-    const colorButtons = document.querySelectorAll('#color-picker button');
-    colorButtons.forEach(button => {
-        button.style.boxShadow = 'none';
-        button.style.border = '2px solid transparent';
-    });
-
-    // Add highlight to the selected color button
-    const selectedButton = document.querySelector(`#color-picker button[data-color="${colorEnum}"]`);
-    if (selectedButton) {
-        selectedButton.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
-        selectedButton.style.border = '2px solid #fff';
-    }
+    const colorButton = document.getElementById('colorTool');
+    colorButton.style.backgroundColor = ColorMap[colorEnum];
+    colorButton.style.borderColor = ColorMap[colorEnum];
 }
 
 function getCurrentColor() {
