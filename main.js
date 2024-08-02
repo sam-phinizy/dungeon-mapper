@@ -101,9 +101,9 @@ const init = () => {
 
 const initializeStage = () => {
   stage = new Konva.Stage({
-    container: "canvas-container",
+    container: "map-area",
     width: calculateAvailableWidth(),
-    height: window.innerHeight,
+    height: window.innerHeight - 206, // Subtract navbar (56px) and library (150px) heights
   });
 
   gridLayer = new Konva.Layer();
@@ -126,7 +126,9 @@ const initializeStage = () => {
 };
 
 function calculateAvailableWidth() {
-  return window.innerWidth;
+  const sidebar = document.getElementById("sidebar");
+  const resizer = document.getElementById("sidebar-resizer");
+  return window.innerWidth - sidebar.offsetWidth - resizer.offsetWidth;
 }
 
 const handleStageMouseDown = (e) => {
@@ -342,9 +344,10 @@ function handleKeyboardShortcuts(event) {
 function handleResize() {
   const sidebar = document.getElementById("sidebar");
   const resizer = document.getElementById("sidebar-resizer");
+  const libraryContainer = document.getElementById("library-container");
   const newWidth =
     calculateAvailableWidth() - sidebar.offsetWidth - resizer.offsetWidth;
-  const newHeight = window.innerHeight - 56; // Adjust for navbar height
+  const newHeight = window.innerHeight - 56 - libraryContainer.offsetHeight; // Adjust for navbar and library height
   stage.width(newWidth);
   stage.height(newHeight);
   gridLayer.width(newWidth);
