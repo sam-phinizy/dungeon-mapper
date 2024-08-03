@@ -139,9 +139,12 @@ function handleDrop(e) {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
   
+  const minCol = Math.min(...item.cells.map(c => c.col));
+  const minRow = Math.min(...item.cells.map(c => c.row));
+  
   item.cells.forEach((cell) => {
-    const x = Math.floor((snappedPos.x / CELL_SIZE) + cell.col - Math.min(...item.cells.map(c => c.col)));
-    const y = Math.floor((snappedPos.y / CELL_SIZE) + cell.row - Math.min(...item.cells.map(c => c.row)));
+    const x = Math.floor(snappedPos.x / CELL_SIZE) + (cell.col - minCol);
+    const y = Math.floor(snappedPos.y / CELL_SIZE) + (cell.row - minRow);
     toggleCell(x, y, cellLayer, CELL_SIZE, cell.state);
   });
 
