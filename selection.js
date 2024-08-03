@@ -7,10 +7,10 @@ const SELECTION_COLOR = "rgba(0, 0, 255, 0.3)";
 let isSelecting = false;
 let selectionRect;
 let selectionStart = { x: 0, y: 0 };
-let selectionLayer;
+let interactionLayer;
 
 function startSelection(pos, layer, CELL_SIZE) {
-  selectionLayer = layer;
+  interactionLayer = layer;
   if (selectionRect) {
     selectionRect.destroy();
   }
@@ -23,8 +23,8 @@ function startSelection(pos, layer, CELL_SIZE) {
     height: CELL_SIZE,
     fill: SELECTION_COLOR,
   });
-  selectionLayer.add(selectionRect);
-  selectionLayer.draw();
+  interactionLayer.add(selectionRect);
+  interactionLayer.draw();
 }
 
 function updateSelection(pos, CELL_SIZE) {
@@ -39,7 +39,7 @@ function updateSelection(pos, CELL_SIZE) {
   selectionRect.position({ x, y });
   selectionRect.width(width);
   selectionRect.height(height);
-  selectionLayer.batchDraw();
+  interactionLayer.batchDraw();
 }
 
 function endSelection() {
@@ -50,8 +50,8 @@ function clearSelection() {
   if (selectionRect) {
     selectionRect.destroy();
     selectionRect = null;
-    if (selectionLayer) {
-      selectionLayer.draw();
+    if (interactionLayer) {
+      interactionLayer.draw();
     }
   }
 }

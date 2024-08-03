@@ -2,14 +2,15 @@
 
 import { snapToGrid } from './utils.js';
 
-let previewLayer;
+let interactionLayer;
 
 function initializePreview(layer) {
-    previewLayer = layer;
+    interactionLayer = layer;
 }
 
 function updatePenPreview(pos, CELL_SIZE, currentColor) {
-    previewLayer.destroyChildren();
+    // Clear only preview elements, not selection
+    interactionLayer.getChildren((node) => node.name() === 'preview').forEach((node) => node.destroy());
 
     const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
     const rect = new Konva.Rect({
@@ -20,13 +21,15 @@ function updatePenPreview(pos, CELL_SIZE, currentColor) {
         stroke: currentColor,
         strokeWidth: 2
     });
-    previewLayer.add(rect);
+    rect.name('preview');
+    interactionLayer.add(rect);
 
-    previewLayer.batchDraw();
+    interactionLayer.batchDraw();
 }
 
 function shapePreview(startPos, endPos, tool, CELL_SIZE, currentColor) {
-    previewLayer.destroyChildren();
+    // Clear only preview elements, not selection
+    interactionLayer.getChildren((node) => node.name() === 'preview').forEach((node) => node.destroy());
 
     let shape;
     let text;
@@ -67,17 +70,20 @@ function shapePreview(startPos, endPos, tool, CELL_SIZE, currentColor) {
     }
 
     if (text) {
-        previewLayer.add(text);
+        text.name('preview');
+        interactionLayer.add(text);
     }
     if (shape) {
-        previewLayer.add(shape);
-        previewLayer.batchDraw();
+        shape.name('preview');
+        interactionLayer.add(shape);
+        interactionLayer.batchDraw();
     }
 }
 
 function clearPreview() {
-    previewLayer.destroyChildren();
-    previewLayer.batchDraw();
+    // Clear only preview elements, not selection
+    interactionLayer.getChildren((node) => node.name() === 'preview').forEach((node) => node.destroy());
+    interactionLayer.batchDraw();
 }
 
 export { initializePreview, updatePenPreview, shapePreview, clearPreview };

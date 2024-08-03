@@ -43,7 +43,7 @@ const GRID_COLOR =
     : "#cccccc";
 const PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
 
-let stage, gridLayer, cellLayer, edgeLayer, selectionLayer, previewLayer;
+let stage, gridLayer, cellLayer, edgeLayer, interactionLayer;
 let chatMessages = [];
 
 // Create a state object to hold shared state
@@ -77,10 +77,10 @@ window.saveToLocalStorage = saveToLocalStorage;
 const init = () => {
   initializeStage();
   initializeGrid(stage, cellLayer, CELL_SIZE);
-  initializeEdgePreview(previewLayer);
+  initializeEdgePreview(interactionLayer);
   initializeToolbar();
   initializeNotes();
-  initializePreview(previewLayer);
+  initializePreview(interactionLayer);
 
   stage.on("mousedown touchstart", handleStageMouseDown);
   stage.on("mousemove touchmove", handleStageMouseMove);
@@ -110,17 +110,16 @@ const initializeStage = () => {
   gridLayer = new Konva.Layer();
   cellLayer = new Konva.Layer();
   edgeLayer = new Konva.Layer();
-  selectionLayer = new Konva.Layer();
-  previewLayer = new Konva.Layer();
+  interactionLayer = new Konva.Layer();
 
-  stage.add(gridLayer, cellLayer, edgeLayer, selectionLayer, previewLayer);
+  stage.add(gridLayer, cellLayer, edgeLayer, interactionLayer);
 
   Object.assign(window, {
     stage,
     gridLayer,
     cellLayer,
     edgeLayer,
-    selectionLayer,
+    interactionLayer,
     CELL_SIZE,
     state,
   });
@@ -383,10 +382,8 @@ function handleResize() {
   cellLayer.height(newHeight);
   edgeLayer.width(newWidth);
   edgeLayer.height(newHeight);
-  selectionLayer.width(newWidth);
-  selectionLayer.height(newHeight);
-  previewLayer.width(newWidth);
-  previewLayer.height(newHeight);
+  interactionLayer.width(newWidth);
+  interactionLayer.height(newHeight);
 
   drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
   stage.batchDraw();
