@@ -470,6 +470,7 @@ function renderLibraryItem(item) {
   const libraryContent = document.getElementById("library-content");
   const itemElement = document.createElement("div");
   itemElement.className = "library-item";
+  itemElement.draggable = true;
 
   const miniStage = new Konva.Stage({
     container: itemElement,
@@ -493,6 +494,10 @@ function renderLibraryItem(item) {
 
   miniLayer.draw();
   libraryContent.appendChild(itemElement);
+
+  itemElement.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify(item));
+  });
 }
 
 function loadLibrary() {
