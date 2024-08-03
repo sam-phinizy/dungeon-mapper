@@ -495,14 +495,20 @@ function renderLibraryItem(item) {
   itemElement.className = "library-item";
   itemElement.draggable = true;
 
-  const miniStage = new Konva.Stage({
-    container: itemElement,
+  const itemContainer = document.createElement("div");
+  itemContainer.style.width = `${item.width * 10}px`;
+  itemContainer.style.height = `${item.height * 10}px`;
+  itemContainer.style.position = "relative";
+  itemElement.appendChild(itemContainer);
+
+  const itemStage = new Konva.Stage({
+    container: itemContainer,
     width: item.width * 10,
     height: item.height * 10,
   });
 
-  const miniLayer = new Konva.Layer();
-  miniStage.add(miniLayer);
+  const itemLayer = new Konva.Layer();
+  itemStage.add(itemLayer);
 
   item.cells.forEach((cell) => {
     const rect = new Konva.Rect({
@@ -512,10 +518,10 @@ function renderLibraryItem(item) {
       height: 10,
       fill: ColorMap[cell.state],
     });
-    miniLayer.add(rect);
+    itemLayer.add(rect);
   });
 
-  miniLayer.draw();
+  itemLayer.draw();
   libraryContent.appendChild(itemElement);
 
   itemElement.addEventListener('dragstart', (e) => {
