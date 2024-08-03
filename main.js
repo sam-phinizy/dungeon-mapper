@@ -124,7 +124,30 @@ const initializeStage = () => {
     CELL_SIZE,
     state,
   });
+
+  const container = stage.container();
+  container.addEventListener('dragover', (e) => {
+    e.preventDefault();
+  });
+
+  container.addEventListener('drop', handleDrop);
 };
+
+function handleDrop(e) {
+  e.preventDefault();
+  const item = JSON.parse(e.dataTransfer.getData('text/plain'));
+  const pos = stage.getPointerPosition();
+  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
+  
+  item.cells.forEach((cell) => {
+    const x = Math.floor((snappedPos.x / CELL_SIZE) + cell.col - Math.min(...item.cells.map(c => c.col)));
+    const y = Math.floor((snappedPos.y / CELL_SIZE) + cell.row - Math.min(...item.cells.map(c => c.row)));
+    toggleCell(x, y, cellLayer, CELL_SIZE, cell.state);
+  });
+
+  cellLayer.batchDraw();
+  debouncedSave();
+}
 
 function calculateAvailableWidth() {
   const sidebar = document.getElementById("sidebar");
