@@ -53,7 +53,12 @@ const state = {
   startPos: null,
 };
 
-// Debounce function
+/**
+ * Creates a debounced function that delays invoking `func` until after `wait` milliseconds have elapsed since the last time the debounced function was invoked.
+ * @param {Function} func - The function to debounce.
+ * @param {number} wait - The number of milliseconds to delay.
+ * @returns {Function} The debounced function.
+ */
 function debounce(func, wait) {
   let timeout;
   return function executedFunction(...args) {
@@ -66,7 +71,10 @@ function debounce(func, wait) {
   };
 }
 
-// Debounced save function
+/**
+ * Debounced version of the saveToLocalStorage function.
+ * It will only call saveToLocalStorage after 1 second of inactivity.
+ */
 const debouncedSave = debounce(() => {
   saveToLocalStorage();
 }, 1000);
@@ -74,6 +82,10 @@ const debouncedSave = debounce(() => {
 // Make saveToLocalStorage accessible in the global scope
 window.saveToLocalStorage = saveToLocalStorage;
 
+/**
+ * Initializes the application.
+ * Sets up the stage, grid, tools, and event listeners.
+ */
 const init = () => {
   initializeStage();
   initializeGrid(stage, cellLayer, CELL_SIZE);
