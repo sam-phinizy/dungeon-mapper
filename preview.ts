@@ -1,4 +1,4 @@
-import { Konva } from "konva";
+import Konva from "konva";
 import { snapToGrid } from "./utils";
 import { ColorEnum } from "./colors";
 

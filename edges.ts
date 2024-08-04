@@ -1,4 +1,4 @@
-import { Konva } from 'konva';
+import Konva from "konva";
 import { snapToGrid } from "./utils";
 import { getCurrentColor, getCurrentRoughLineType } from "./toolbar";
 import { ColorMap, ColorEnum } from "./colors";
@@ -12,7 +12,7 @@ let previewLayer: Konva.Layer;
 let edges = new Map<string, EdgeData>();
 
 interface EdgeData {
-  type: 'door' | 'roughLine';
+  type: "door" | "roughLine";
   roughLineType?: string;
   color?: ColorEnum;
   konvaObject: Konva.Group;
@@ -45,7 +45,11 @@ function ensureValidEdgePreview(): void {
   }
 }
 
-export function updateEdgePreview(pos: Konva.Vector2d, CELL_SIZE: number, state: State): void {
+export function updateEdgePreview(
+  pos: Konva.Vector2d,
+  CELL_SIZE: number,
+  state: State,
+): void {
   if (state.currentTool !== "door" && state.currentTool !== "roughLine") {
     edgePreview.visible(false);
     previewLayer.batchDraw();
@@ -129,7 +133,7 @@ export function placeEdge(edgeLayer: Konva.Layer, CELL_SIZE: number): void {
       konvaObject: edge,
     };
   } else {
-    return;  // Handle unexpected case
+    return; // Handle unexpected case
   }
 
   edgeLayer.add(edge);
@@ -147,7 +151,11 @@ function getRandomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function loadEdgesFromStorage(savedEdges: [string, EdgeData][], edgeLayer: Konva.Layer, CELL_SIZE: number): void {
+export function loadEdgesFromStorage(
+  savedEdges: [string, EdgeData][],
+  edgeLayer: Konva.Layer,
+  CELL_SIZE: number,
+): void {
   console.log("Loading edges:", savedEdges);
   edges.clear();
   edgeLayer.destroyChildren();
@@ -168,11 +176,11 @@ export function loadEdgesFromStorage(savedEdges: [string, EdgeData][], edgeLayer
         endX,
         endY,
         CELL_SIZE,
-        value.roughLineType || 'standard',
+        value.roughLineType || "standard",
         value.color || ColorEnum.BLACK,
       );
     } else {
-      return;  // Handle unexpected case
+      return; // Handle unexpected case
     }
 
     if (edge) {
@@ -185,7 +193,13 @@ export function loadEdgesFromStorage(savedEdges: [string, EdgeData][], edgeLayer
   edgeLayer.batchDraw();
 }
 
-const generateDoor = (startX: number, startY: number, endX: number, endY: number, CELL_SIZE: number): Konva.Group => {
+const generateDoor = (
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  CELL_SIZE: number,
+): Konva.Group => {
   const edge = new Konva.Group();
 
   const doorLine = new Konva.Line({
@@ -235,7 +249,7 @@ function generateRoughLine(
   endY: number,
   CELL_SIZE: number,
   roughLineType: string,
-  color: ColorEnum
+  color: ColorEnum,
 ): Konva.Group {
   const edge = new Konva.Group();
 
@@ -257,7 +271,13 @@ function generateRoughLine(
   return edge;
 }
 
-function getNormalLine(startX: number, startY: number, endX: number, endY: number, color: ColorEnum): Konva.Line[] {
+function getNormalLine(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  color: ColorEnum,
+): Konva.Line[] {
   const normalLine = new Konva.Line({
     points: [startX, startY, endX, endY],
     stroke: ColorMap[color],
@@ -268,7 +288,14 @@ function getNormalLine(startX: number, startY: number, endX: number, endY: numbe
   return [normalLine];
 }
 
-function getBlockLine(startX: number, startY: number, endX: number, endY: number, CELL_SIZE: number, color: ColorEnum): Konva.Shape[] {
+function getBlockLine(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  CELL_SIZE: number,
+  color: ColorEnum,
+): Konva.Shape[] {
   const objects: Konva.Shape[] = [];
   const dx = endX - startX;
   const dy = endY - startY;
@@ -311,7 +338,13 @@ function getBlockLine(startX: number, startY: number, endX: number, endY: number
   return objects;
 }
 
-function getRoughLine(startX: number, startY: number, endX: number, endY: number, color: ColorEnum): Konva.Line[] {
+function getRoughLine(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  color: ColorEnum,
+): Konva.Line[] {
   const objects: Konva.Line[] = [];
   for (let i = 0; i < 3; i++) {
     const offset = Math.random() * 2 - 1;
