@@ -161,10 +161,11 @@ function toggleDebugMode() {
 function initializeDebugTool() {
   const debugTool = document.createElement("button");
   debugTool.id = "debugTool";
+  debugTool.className = "btn btn-outline-secondary mb-2";
   debugTool.innerHTML = "🐞"; // Bug emoji as the icon
   debugTool.title = "Toggle Debug Mode";
   debugTool.addEventListener("click", toggleDebugMode);
-  document.getElementById("toolbar").appendChild(debugTool);
+  document.getElementById("floating-tools").appendChild(debugTool);
 }
 
 function getCurrentRoughLineType() {
