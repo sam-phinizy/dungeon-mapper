@@ -1,10 +1,7 @@
 // drawing.js
 
-import { snapToGrid } from './utils.js';
-import { ColorEnum, ColorMap } from './colors.js';
-
-const WALL_COLOR = ColorEnum.BLACK;  // Dark gray color
-const PATH_COLOR = ColorEnum.WHITE;
+import { snapToGrid } from "./utils.js";
+import { ColorEnum, ColorMap } from "./colors.js";
 
 const dungeonMapperGrid = new Map();
 
@@ -53,7 +50,7 @@ function clearGrid(cellLayer) {
 function renderGrid(cellLayer, CELL_SIZE) {
   cellLayer.destroyChildren();
   for (const [key, colorEnum] of dungeonMapperGrid) {
-    const [x, y] = key.split(',').map(Number);
+    const [x, y] = key.split(",").map(Number);
     const cell = new Konva.Rect({
       x: x * CELL_SIZE,
       y: y * CELL_SIZE,
@@ -67,4 +64,11 @@ function renderGrid(cellLayer, CELL_SIZE) {
   cellLayer.batchDraw();
 }
 
-export { initializeGrid, drawGrid, toggleCell, clearGrid, renderGrid, dungeonMapperGrid };
+export {
+  initializeGrid,
+  drawGrid,
+  toggleCell,
+  clearGrid,
+  renderGrid,
+  dungeonMapperGrid,
+};
