@@ -611,7 +611,7 @@ function startLibraryItemPreview(item) {
         cell.row + offsetY,
         cellLayer,
         CELL_SIZE,
-        cell.state
+        cell.state,
       );
     });
 
