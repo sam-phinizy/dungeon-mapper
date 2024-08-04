@@ -94,6 +94,7 @@ const init = () => {
   initializeToolbar();
   initializeNotes();
   initializePreview(interactionLayer);
+  initializeDebugTool();
 
   stage.on("mousedown touchstart", handleStageMouseDown);
   stage.on("mousemove touchmove", handleStageMouseMove);
@@ -128,8 +129,9 @@ const initializeStage = () => {
   cellLayer = new Konva.Layer();
   edgeLayer = new Konva.Layer();
   interactionLayer = new Konva.Layer();
+  debugLayer = new Konva.Layer();
 
-  stage.add(gridLayer, cellLayer, edgeLayer, interactionLayer);
+  stage.add(gridLayer, cellLayer, edgeLayer, interactionLayer, debugLayer);
 
   Object.assign(window, {
     stage,
@@ -137,6 +139,7 @@ const initializeStage = () => {
     cellLayer,
     edgeLayer,
     interactionLayer,
+    debugLayer,
     CELL_SIZE,
     state,
   });
@@ -145,6 +148,18 @@ const initializeStage = () => {
   container.addEventListener("dragover", (e) => {
     e.preventDefault();
   });
+
+  // Add debug text
+  debugText = new Konva.Text({
+    x: 10,
+    y: 10,
+    text: '',
+    fontSize: 14,
+    fontFamily: 'Arial',
+    fill: 'red',
+    visible: false,
+  });
+  debugLayer.add(debugText);
 };
 
 /**
