@@ -152,35 +152,7 @@ const initializeStage = () => {
  * Handles the drop event for dragged library items.
  * @param {DragEvent} e - The drop event.
  */
-function handleDrop(e) {
-  e.preventDefault();
-  const item = JSON.parse(e.dataTransfer.getData("text/plain"));
-  const pos = stage.getPointerPosition();
-  const stagePos = stage.position();
-
-  // Adjust the position based on the stage's current position and scale
-  // const adjustedPos = {
-  //   x: (pos.x - stagePos.x) / stage.scaleX(x),
-  //   y: (pos.y - stagePos.y) / stage.scaleY(),
-  // };
-
-  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-
-  const minCol = Math.min(...item.cells.map((c) => c.col));
-  const minRow = Math.min(...item.cells.map((c) => c.row));
-  console.log(`Dropping at (${pos.x}, ${pos.y})`);
-  console.log(`Snapped to (${snappedPos.x}, ${snappedPos.y})`);
-  console.log(`Min col: ${minCol}, Min row: ${minRow}`);
-
-  item.cells.forEach((cell) => {
-    const x = Math.floor(snappedPos.x / CELL_SIZE);
-    const y = Math.floor(snappedPos.y / CELL_SIZE);
-    toggleCell(x, y, cellLayer, CELL_SIZE, cell.state);
-  });
-
-  cellLayer.batchDraw();
-  debouncedSave();
-}
+// This function is no longer needed, so we'll remove it entirely.
 
 /**
  * Calculates the available width for the stage.
@@ -577,7 +549,6 @@ function renderLibraryItem(item) {
   const libraryContent = document.getElementById("library-content");
   const itemElement = document.createElement("div");
   itemElement.className = "library-item";
-  itemElement.draggable = true;
 
   const itemContainer = document.createElement("div");
   itemContainer.style.width = `${item.width * 10}px`;
@@ -608,9 +579,66 @@ function renderLibraryItem(item) {
   itemLayer.draw();
   libraryContent.appendChild(itemElement);
 
-  itemElement.addEventListener("dragstart", (e) => {
-    e.dataTransfer.setData("text/plain", JSON.stringify(item));
+  itemElement.addEventListener("click", () => {
+    startLibraryItemPreview(item);
   });
+}
+
+function startLibraryItemPreview(item) {
+  const previewGroup = new Konva.Group({
+    opacity: 0.7,
+  });
+
+  item.cells.forEach((cell) => {
+    const rect = new Konva.Rect({
+      x: cell.col * CELL_SIZE,
+      y: cell.row * CELL_SIZE,
+      width: CELL_SIZE,
+      height: CELL_SIZE,
+      fill: ColorMap[cell.state],
+    });
+    previewGroup.add(rect);
+  });
+
+  interactionLayer.add(previewGroup);
+
+  const handleMouseMove = (e) => {
+    const pos = stage.getPointerPosition();
+    const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
+    previewGroup.position({
+      x: snappedPos.x - item.cells[0].col * CELL_SIZE,
+      y: snappedPos.y - item.cells[0].row * CELL_SIZE,
+    });
+    interactionLayer.batchDraw();
+  };
+
+  const handleClick = (e) => {
+    const pos = stage.getPointerPosition();
+    const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
+    const offsetX = Math.floor(snappedPos.x / CELL_SIZE) - item.cells[0].col;
+    const offsetY = Math.floor(snappedPos.y / CELL_SIZE) - item.cells[0].row;
+
+    item.cells.forEach((cell) => {
+      toggleCell(
+        cell.col + offsetX,
+        cell.row + offsetY,
+        cellLayer,
+        CELL_SIZE,
+        cell.state
+      );
+    });
+
+    previewGroup.destroy();
+    interactionLayer.batchDraw();
+    cellLayer.batchDraw();
+    debouncedSave();
+
+    stage.off("mousemove", handleMouseMove);
+    stage.off("click", handleClick);
+  };
+
+  stage.on("mousemove", handleMouseMove);
+  stage.on("click", handleClick);
 }
 
 /**
