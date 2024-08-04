@@ -611,6 +611,17 @@ function startLibraryItemPreview(item) {
     previewGroup.add(rect);
   });
 
+  item.edges.forEach((edge) => {
+    const line = new Konva.Line({
+      points: [edge.startX, edge.startY, edge.endX, edge.endY],
+      stroke: edge.color,
+      strokeWidth: edge.strokeWidth,
+      lineCap: 'round',
+      lineJoin: 'round',
+    });
+    previewGroup.add(line);
+  });
+
   interactionLayer.add(previewGroup);
 
   const handleMouseMove = (e) => {
@@ -639,9 +650,21 @@ function startLibraryItemPreview(item) {
       );
     });
 
+    item.edges.forEach((edge) => {
+      const newEdge = {
+        ...edge,
+        startX: edge.startX + offsetX * CELL_SIZE,
+        startY: edge.startY + offsetY * CELL_SIZE,
+        endX: edge.endX + offsetX * CELL_SIZE,
+        endY: edge.endY + offsetY * CELL_SIZE,
+      };
+      placeEdge(edgeLayer, CELL_SIZE, newEdge);
+    });
+
     previewGroup.destroy();
     interactionLayer.batchDraw();
     cellLayer.batchDraw();
+    edgeLayer.batchDraw();
     debouncedSave();
 
     stage.off("mousemove", handleMouseMove);
