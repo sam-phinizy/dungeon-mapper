@@ -51,6 +51,7 @@ const state = {
   currentTool: "draw",
   isDrawing: false,
   startPos: null,
+  debugMode: false,
 };
 
 /**
@@ -242,6 +243,22 @@ function handleStageMouseMove(e) {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
     showNotePopover(row, col, pos);
+  }
+
+  // Update debug text
+  if (state.debugMode) {
+    const cellX = Math.floor(pos.x / CELL_SIZE);
+    const cellY = Math.floor(pos.y / CELL_SIZE);
+    debugText.text(`X: ${cellX}, Y: ${cellY}`);
+    debugText.position({
+      x: pos.x + 10,
+      y: pos.y + 10
+    });
+    debugText.visible(true);
+    debugLayer.batchDraw();
+  } else {
+    debugText.visible(false);
+    debugLayer.batchDraw();
   }
 }
 
