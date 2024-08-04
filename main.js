@@ -576,16 +576,18 @@ function renderLibraryItem(item) {
     itemLayer.add(rect);
   });
 
-  item.edges.forEach((edge) => {
-    const line = new Konva.Line({
-      points: [edge.startX * 10 / CELL_SIZE, edge.startY * 10 / CELL_SIZE, edge.endX * 10 / CELL_SIZE, edge.endY * 10 / CELL_SIZE],
-      stroke: edge.color,
-      strokeWidth: edge.strokeWidth * 10 / CELL_SIZE,
-      lineCap: 'round',
-      lineJoin: 'round',
+  if (item.edges && Array.isArray(item.edges)) {
+    item.edges.forEach((edge) => {
+      const line = new Konva.Line({
+        points: [edge.startX * 10 / CELL_SIZE, edge.startY * 10 / CELL_SIZE, edge.endX * 10 / CELL_SIZE, edge.endY * 10 / CELL_SIZE],
+        stroke: edge.color,
+        strokeWidth: edge.strokeWidth * 10 / CELL_SIZE,
+        lineCap: 'round',
+        lineJoin: 'round',
+      });
+      itemLayer.add(line);
     });
-    itemLayer.add(line);
-  });
+  }
 
   itemLayer.draw();
   libraryContent.appendChild(itemElement);
@@ -611,16 +613,18 @@ function startLibraryItemPreview(item) {
     previewGroup.add(rect);
   });
 
-  item.edges.forEach((edge) => {
-    const line = new Konva.Line({
-      points: [edge.startX, edge.startY, edge.endX, edge.endY],
-      stroke: edge.color,
-      strokeWidth: edge.strokeWidth,
-      lineCap: 'round',
-      lineJoin: 'round',
+  if (item.edges && Array.isArray(item.edges)) {
+    item.edges.forEach((edge) => {
+      const line = new Konva.Line({
+        points: [edge.startX, edge.startY, edge.endX, edge.endY],
+        stroke: edge.color,
+        strokeWidth: edge.strokeWidth,
+        lineCap: 'round',
+        lineJoin: 'round',
+      });
+      previewGroup.add(line);
     });
-    previewGroup.add(line);
-  });
+  }
 
   interactionLayer.add(previewGroup);
 
@@ -650,16 +654,18 @@ function startLibraryItemPreview(item) {
       );
     });
 
-    item.edges.forEach((edge) => {
-      const newEdge = {
-        ...edge,
-        startX: edge.startX + offsetX * CELL_SIZE,
-        startY: edge.startY + offsetY * CELL_SIZE,
-        endX: edge.endX + offsetX * CELL_SIZE,
-        endY: edge.endY + offsetY * CELL_SIZE,
-      };
-      placeEdge(edgeLayer, CELL_SIZE, newEdge);
-    });
+    if (item.edges && Array.isArray(item.edges)) {
+      item.edges.forEach((edge) => {
+        const newEdge = {
+          ...edge,
+          startX: edge.startX + offsetX * CELL_SIZE,
+          startY: edge.startY + offsetY * CELL_SIZE,
+          endX: edge.endX + offsetX * CELL_SIZE,
+          endY: edge.endY + offsetY * CELL_SIZE,
+        };
+        placeEdge(edgeLayer, CELL_SIZE, newEdge);
+      });
+    }
 
     previewGroup.destroy();
     interactionLayer.batchDraw();
