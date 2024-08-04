@@ -215,7 +215,6 @@ const handleStageMouseDown = (e) => {
  */
 function handleStageMouseMove(e) {
   const pos = stage.getPointerPosition();
-  console.log(pos, snapToGrid(pos.x, pos.y, CELL_SIZE));
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
   if (state.currentTool === "door" || state.currentTool === "roughLine") {
     updateEdgePreview(pos, CELL_SIZE, state);
@@ -437,11 +436,6 @@ function saveToLocalStorage() {
   for (const [key, colorEnum] of dungeonMapperGrid) {
     gridData[key] = colorEnum;
   }
-  console.log("Saving grid:", gridData);
-  console.log("Saving notes:", getNotes());
-  console.log("Saving chat messages:", chatMessages);
-  console.log("Saving edges:", Array.from(edges));
-
   localStorage.setItem("dungeonMapperGrid", JSON.stringify(gridData));
   localStorage.setItem("dungeonMapperNotes", JSON.stringify(getNotes()));
   localStorage.setItem(
@@ -449,7 +443,6 @@ function saveToLocalStorage() {
     JSON.stringify(chatMessages),
   );
   localStorage.setItem("dungeonMapperEdges", JSON.stringify(Array.from(edges)));
-  console.log("Saved to local storage");
 }
 
 /**
@@ -457,7 +450,6 @@ function saveToLocalStorage() {
  */
 function loadFromLocalStorage() {
   const savedGrid = JSON.parse(localStorage.getItem("dungeonMapperGrid"));
-  console.log("Loaded grid:", savedGrid);
   if (savedGrid) {
     dungeonMapperGrid.clear();
     Object.entries(savedGrid).forEach(([key, colorEnum]) => {
@@ -466,7 +458,6 @@ function loadFromLocalStorage() {
   }
 
   const savedNotes = JSON.parse(localStorage.getItem("dungeonMapperNotes"));
-  console.log("Loaded notes:", savedNotes);
   if (savedNotes) {
     setNotes(savedNotes);
   }
@@ -474,13 +465,11 @@ function loadFromLocalStorage() {
   const savedChatMessages = JSON.parse(
     localStorage.getItem("dungeonMapperChatMessages"),
   );
-  console.log("Loaded chat messages:", savedChatMessages);
   if (savedChatMessages) {
     chatMessages = savedChatMessages;
   }
 
   const savedEdges = JSON.parse(localStorage.getItem("dungeonMapperEdges"));
-  console.log("Loaded edges:", savedEdges);
   if (savedEdges) {
     loadEdgesFromStorage(savedEdges, edgeLayer, CELL_SIZE);
   }
@@ -655,7 +644,6 @@ function loadLibrary() {
  * Initializes DOM elements and sets up event listeners.
  */
 function initializeDOMElements() {
-  console.log("initialize");
   // Make the floating tools window draggable by its title bar
   const floatingTools = document.getElementById("floating-tools");
   const floatingToolsHandle = floatingTools.querySelector(".window-title");
