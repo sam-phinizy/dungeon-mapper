@@ -136,7 +136,15 @@ function handleDrop(e) {
   e.preventDefault();
   const item = JSON.parse(e.dataTransfer.getData("text/plain"));
   const pos = stage.getPointerPosition();
-  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
+  const stagePos = stage.position();
+  
+  // Adjust the position based on the stage's current position and scale
+  const adjustedPos = {
+    x: (pos.x - stagePos.x) / stage.scaleX(),
+    y: (pos.y - stagePos.y) / stage.scaleY()
+  };
+  
+  const snappedPos = snapToGrid(adjustedPos.x, adjustedPos.y, CELL_SIZE);
 
   const minCol = Math.min(...item.cells.map((c) => c.col));
   const minRow = Math.min(...item.cells.map((c) => c.row));
