@@ -513,10 +513,10 @@ function addToLibrary() {
   const maxRow = Math.max(...selectedCells.map((cell) => cell.row));
 
   const selectedEdges = Array.from(edges).filter(edge => 
-    edge.startX >= minCol * CELL_SIZE && edge.startX <= (maxCol + 1) * CELL_SIZE &&
-    edge.startY >= minRow * CELL_SIZE && edge.startY <= (maxRow + 1) * CELL_SIZE &&
-    edge.endX >= minCol * CELL_SIZE && edge.endX <= (maxCol + 1) * CELL_SIZE &&
-    edge.endY >= minRow * CELL_SIZE && edge.endY <= (maxRow + 1) * CELL_SIZE
+    Math.min(edge.startX, edge.endX) >= minCol * CELL_SIZE &&
+    Math.max(edge.startX, edge.endX) <= (maxCol + 1) * CELL_SIZE &&
+    Math.min(edge.startY, edge.endY) >= minRow * CELL_SIZE &&
+    Math.max(edge.startY, edge.endY) <= (maxRow + 1) * CELL_SIZE
   );
 
   const libraryItem = {
