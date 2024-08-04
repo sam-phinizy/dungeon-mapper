@@ -12,7 +12,12 @@ import {
   endSelection,
   getSelectedCells,
 } from "./selection.js";
-import { initializeToolbar, setTool, getCurrentColor } from "./toolbar.js";
+import {
+  initializeToolbar,
+  setTool,
+  getCurrentColor,
+  initializeDebugTool,
+} from "./toolbar.js";
 import {
   initializeNotes,
   openNoteEditor,
@@ -43,7 +48,7 @@ const GRID_COLOR =
     : "#cccccc";
 const PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
 
-let stage, gridLayer, cellLayer, edgeLayer, interactionLayer;
+let stage, gridLayer, cellLayer, edgeLayer, interactionLayer, debugLayer;
 let chatMessages = [];
 
 // Create a state object to hold shared state
@@ -155,10 +160,10 @@ const initializeStage = () => {
   debugText = new Konva.Text({
     x: 10,
     y: 10,
-    text: '',
+    text: "",
     fontSize: 14,
-    fontFamily: 'Arial',
-    fill: 'red',
+    fontFamily: "Arial",
+    fill: "red",
     visible: false,
   });
   debugLayer.add(debugText);
@@ -269,7 +274,7 @@ function handleStageMouseMove(e) {
     debugText.text(`X: ${cellX}, Y: ${cellY}`);
     debugText.position({
       x: pos.x + 10,
-      y: pos.y + 10
+      y: pos.y + 10,
     });
     debugText.visible(true);
     debugLayer.batchDraw();
@@ -547,23 +552,25 @@ function addToLibrary() {
   const maxRow = Math.max(...selectedCells.map((cell) => cell.row));
 
   const selectedEdges = Array.from(edges).filter(([key, edge]) => {
-    const [startX, startY, endX, endY] = key.split(',').map(Number);
-    return Math.min(startX, endX) >= minCol * CELL_SIZE &&
-           Math.max(startX, endX) <= (maxCol + 1) * CELL_SIZE &&
-           Math.min(startY, endY) >= minRow * CELL_SIZE &&
-           Math.max(startY, endY) <= (maxRow + 1) * CELL_SIZE;
+    const [startX, startY, endX, endY] = key.split(",").map(Number);
+    return (
+      Math.min(startX, endX) >= minCol * CELL_SIZE &&
+      Math.max(startX, endX) <= (maxCol + 1) * CELL_SIZE &&
+      Math.min(startY, endY) >= minRow * CELL_SIZE &&
+      Math.max(startY, endY) <= (maxRow + 1) * CELL_SIZE
+    );
   });
 
   const libraryItem = {
     cells: selectedCells,
     edges: selectedEdges.map(([key, edge]) => {
-      const [startX, startY, endX, endY] = key.split(',').map(Number);
+      const [startX, startY, endX, endY] = key.split(",").map(Number);
       return {
         ...edge,
         startX: startX - minCol * CELL_SIZE,
         startY: startY - minRow * CELL_SIZE,
         endX: endX - minCol * CELL_SIZE,
-        endY: endY - minRow * CELL_SIZE
+        endY: endY - minRow * CELL_SIZE,
       };
     }),
     width: maxCol - minCol + 1,
@@ -617,11 +624,16 @@ function renderLibraryItem(item) {
   if (item.edges && Array.isArray(item.edges)) {
     item.edges.forEach((edge) => {
       const line = new Konva.Line({
-        points: [edge.startX * 10 / CELL_SIZE, edge.startY * 10 / CELL_SIZE, edge.endX * 10 / CELL_SIZE, edge.endY * 10 / CELL_SIZE],
+        points: [
+          (edge.startX * 10) / CELL_SIZE,
+          (edge.startY * 10) / CELL_SIZE,
+          (edge.endX * 10) / CELL_SIZE,
+          (edge.endY * 10) / CELL_SIZE,
+        ],
         stroke: edge.color,
-        strokeWidth: edge.strokeWidth * 10 / CELL_SIZE,
-        lineCap: 'round',
-        lineJoin: 'round',
+        strokeWidth: (edge.strokeWidth * 10) / CELL_SIZE,
+        lineCap: "round",
+        lineJoin: "round",
       });
       itemLayer.add(line);
     });
@@ -657,8 +669,8 @@ function startLibraryItemPreview(item) {
         points: [edge.startX, edge.startY, edge.endX, edge.endY],
         stroke: edge.color,
         strokeWidth: edge.strokeWidth,
-        lineCap: 'round',
-        lineJoin: 'round',
+        lineCap: "round",
+        lineJoin: "round",
       });
       previewGroup.add(line);
     });
