@@ -1,53 +1,36 @@
 import Konva from "konva";
-import { snapToGrid } from "./utils";
 import {
-  initializeGrid,
-  drawGrid,
-  toggleCell,
-  renderGrid,
-  dungeonMapperGrid,
-} from "./drawing";
+  debouncedSave,
+  loadFromLocalStorage,
+  saveToLocalStorage,
+  snapToGrid,
+} from "./utils";
+import { renderGrid, toggleCell } from "./drawing";
+import { endSelection, startSelection, updateSelection } from "./selection";
 import {
-  startSelection,
-  updateSelection,
-  endSelection,
-  getSelectedCells,
-  clearSelection,
-} from "./selection";
-import {
-  initializeToolbar,
-  setTool,
   getCurrentColor,
   initializeDebugTool,
+  initializeToolbar,
+  setTool,
 } from "./toolbar";
+import { initializeNotes, openNoteEditor, showNotePopover } from "./notes";
 import {
-  initializeNotes,
-  openNoteEditor,
-  showNotePopover,
-  getNotes,
-  setNotes,
-} from "./notes";
-import {
-  initializePreview,
-  updatePenPreview,
-  shapePreview,
   clearPreview,
+  initializePreview,
+  shapePreview,
+  updatePenPreview,
 } from "./preview";
 import { makeDraggable } from "./draggable";
 import {
-  initializeEdgePreview,
-  updateEdgePreview,
-  placeEdge,
-  loadEdgesFromStorage,
   edges,
+  initializeEdgePreview,
+  placeEdge,
+  updateEdgePreview,
 } from "./edges";
-import { ColorMap, ColorEnum } from "./colors";
+import { ColorEnum } from "./colors";
+import { ToolType } from "./toolTypes";
 
 const CELL_SIZE = 32;
-const GRID_COLOR =
-  window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "#444444"
-    : "#cccccc";
 const PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
 
 let stage: Konva.Stage;
@@ -58,57 +41,43 @@ let interactionLayer: Konva.Layer;
 let debugLayer: Konva.Layer;
 let debugText: Konva.Text;
 let chatMessages: string[] = [];
+export type DungeonMapGrid = Map<string, ColorEnum>;
 
 interface State {
-  currentTool: string;
+  currentTool: ToolType;
   isDrawing: boolean;
   startPos: { x: number; y: number } | null;
   debugMode: boolean;
+  dungeonMapperGrid: DungeonMapGrid;
 }
 
 const state: State = {
-  currentTool: "draw",
+  currentTool: ToolType.PEN,
   isDrawing: false,
   startPos: null,
   debugMode: false,
+  dungeonMapperGrid: new Map<string, ColorEnum>(),
 };
-
-function debounce<F extends (...args: any[]) => void>(
-  func: F,
-  wait: number,
-): (...args: Parameters<F>) => void {
-  let timeout: ReturnType<typeof setTimeout>;
-  return function executedFunction(...args: Parameters<F>) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-
-const debouncedSave = debounce(() => {
-  saveToLocalStorage();
-}, 1000);
 
 (window as any).saveToLocalStorage = saveToLocalStorage;
 
 const init = (): void => {
   initializeStage();
-  initializeGrid(stage, cellLayer, CELL_SIZE);
+  cellLayer.draw();
   initializeEdgePreview(interactionLayer);
   initializeToolbar();
   initializeNotes();
   initializePreview(interactionLayer);
   initializeDebugTool();
 
+  loadFromLocalStorage();
+
   stage.on("mousedown touchstart", handleStageMouseDown);
   stage.on("mousemove touchmove", handleStageMouseMove);
   stage.on("mouseup touchend", handleStageMouseUp);
 
-  loadFromLocalStorage();
-  renderGrid(cellLayer, CELL_SIZE);
+  renderGrid(state.dungeonMapperGrid, cellLayer, CELL_SIZE);
+  cellLayer.batchDraw();
   displayLoadedChatMessages();
 
   document.addEventListener("keydown", handleKeyboardShortcuts);
@@ -117,13 +86,12 @@ const init = (): void => {
     .matchMedia("(prefers-color-scheme: dark)")
     .addListener(handleColorSchemeChange);
 
-  setTool("pen");
+  setTool(ToolType.PEN);
   initializeDOMElements();
 
   (window as any).clearGrid = clearMap;
   (window as any).edges = edges;
 };
-
 const initializeStage = (): void => {
   stage = new Konva.Stage({
     container: "map-area",
@@ -197,15 +165,15 @@ const handleStageMouseDown = (
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
 
   switch (state.currentTool) {
-    case "door":
-    case "roughLine":
-      placeEdge(edgeLayer, CELL_SIZE);
-      debouncedSave();
+    case ToolType.DOOR:
+    case ToolType.ROUGH_LINE:
+      placeEdge(edgeLayer, CELL_SIZE, state);
+      debouncedSave(state.dungeonMapperGrid);
       break;
-    case "select":
+    case ToolType.SELECT:
       startSelection(snappedPos, interactionLayer, CELL_SIZE);
       break;
-    case "pen":
+    case ToolType.PEN:
       state.isDrawing = true;
       const { x, y } = snappedPos;
       toggleCell(
@@ -214,16 +182,17 @@ const handleStageMouseDown = (
         cellLayer,
         CELL_SIZE,
         getCurrentColor(),
+        state.dungeonMapperGrid,
       );
-      debouncedSave();
+      debouncedSave(state.dungeonMapperGrid);
       break;
-    case "rect":
-    case "circle":
-    case "line":
+    case ToolType.RECT:
+    case ToolType.CIRCLE:
+    case ToolType.LINE:
       state.isDrawing = true;
       state.startPos = snappedPos;
       break;
-    case "notes":
+    case ToolType.NOTES:
       const { x: noteX, y: noteY } = snappedPos;
       openNoteEditor(
         Math.floor(noteX / CELL_SIZE),
@@ -232,27 +201,38 @@ const handleStageMouseDown = (
       break;
   }
 };
+
 function handleStageMouseMove(
   e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
 ): void {
   const pos = stage.getPointerPosition();
   if (!pos) return;
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  if (state.currentTool === "door" || state.currentTool === "roughLine") {
+  if (
+    state.currentTool === ToolType.DOOR ||
+    state.currentTool === ToolType.ROUGH_LINE
+  ) {
     updateEdgePreview(pos, CELL_SIZE, state);
-  } else if (state.currentTool === "select") {
+  } else if (state.currentTool === ToolType.SELECT) {
     updateSelection(pos, CELL_SIZE);
-  } else if (state.currentTool === "pen" && state.isDrawing) {
+  } else if (state.currentTool === ToolType.PEN && state.isDrawing) {
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
-    toggleCell(x, y, cellLayer, CELL_SIZE, getCurrentColor());
-    debouncedSave();
-  } else if (state.currentTool == "pen" && !state.isDrawing) {
+    toggleCell(
+      x,
+      y,
+      cellLayer,
+      CELL_SIZE,
+      getCurrentColor(),
+      state.dungeonMapperGrid,
+    );
+    debouncedSave(state.dungeonMapperGrid);
+  } else if (state.currentTool === ToolType.PEN && !state.isDrawing) {
     updatePenPreview(pos, CELL_SIZE, PREVIEW_COLOR);
   } else if (
-    (state.currentTool === "rect" ||
-      state.currentTool === "circle" ||
-      state.currentTool === "line") &&
+    (state.currentTool === ToolType.RECT ||
+      state.currentTool === ToolType.CIRCLE ||
+      state.currentTool === ToolType.LINE) &&
     state.isDrawing &&
     state.startPos
   ) {
@@ -263,7 +243,7 @@ function handleStageMouseMove(
       CELL_SIZE,
       PREVIEW_COLOR,
     );
-  } else if (state.currentTool === "notes") {
+  } else if (state.currentTool === ToolType.NOTES) {
     const row = Math.floor(snappedPos.y / CELL_SIZE);
     const col = Math.floor(snappedPos.x / CELL_SIZE);
     showNotePopover(row, col, pos);
@@ -286,16 +266,16 @@ function handleStageMouseMove(
 }
 
 function handleStageMouseUp(): void {
-  if (state.currentTool === "select") {
+  if (state.currentTool === ToolType.SELECT) {
     endSelection();
   } else if (
-    state.currentTool === "pen" ||
-    state.currentTool === "rect" ||
-    state.currentTool === "circle" ||
-    state.currentTool === "line"
+    state.currentTool === ToolType.PEN ||
+    state.currentTool === ToolType.RECT ||
+    state.currentTool === ToolType.CIRCLE ||
+    state.currentTool === ToolType.LINE
   ) {
     if (state.isDrawing) {
-      if (state.currentTool !== "pen") {
+      if (state.currentTool !== ToolType.PEN) {
         const endPos = snapToGrid(
           stage.getPointerPosition()!.x,
           stage.getPointerPosition()!.y,
@@ -306,7 +286,7 @@ function handleStageMouseUp(): void {
       state.isDrawing = false;
       state.startPos = null;
       clearPreview();
-      debouncedSave();
+      debouncedSave(state.dungeonMapperGrid);
     }
   }
 }
@@ -321,7 +301,7 @@ function drawShape(
   const endCol = Math.floor(endPos.x / CELL_SIZE);
   const endRow = Math.floor(endPos.y / CELL_SIZE);
 
-  if (state.currentTool === "rect") {
+  if (state.currentTool === ToolType.RECT) {
     for (
       let row = Math.min(startRow, endRow);
       row <= Math.max(startRow, endRow);
@@ -332,10 +312,17 @@ function drawShape(
         col <= Math.max(startCol, endCol);
         col++
       ) {
-        toggleCell(col, row, cellLayer, CELL_SIZE, currentColor);
+        toggleCell(
+          col,
+          row,
+          cellLayer,
+          CELL_SIZE,
+          currentColor,
+          state.dungeonMapperGrid,
+        );
       }
     }
-  } else if (state.currentTool === "circle") {
+  } else if (state.currentTool === ToolType.CIRCLE) {
     const centerRow = (startRow + endRow) / 2;
     const centerCol = (startCol + endCol) / 2;
     const radius =
@@ -357,11 +344,18 @@ function drawShape(
           Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2) <=
           Math.pow(radius, 2)
         ) {
-          toggleCell(col, row, cellLayer, CELL_SIZE, currentColor);
+          toggleCell(
+            col,
+            row,
+            cellLayer,
+            CELL_SIZE,
+            currentColor,
+            state.dungeonMapperGrid,
+          );
         }
       }
     }
-  } else if (state.currentTool === "line") {
+  } else if (state.currentTool === ToolType.LINE) {
     const dx = Math.abs(endCol - startCol);
     const dy = Math.abs(endRow - startRow);
     const sx = startCol < endCol ? 1 : -1;
@@ -372,7 +366,14 @@ function drawShape(
     let col = startCol;
 
     while (true) {
-      toggleCell(col, row, cellLayer, CELL_SIZE, currentColor);
+      toggleCell(
+        col,
+        row,
+        cellLayer,
+        CELL_SIZE,
+        currentColor,
+        state.dungeonMapperGrid,
+      );
 
       if (row === endRow && col === endCol) break;
       const e2 = 2 * err;
@@ -400,28 +401,28 @@ function handleKeyboardShortcuts(event: KeyboardEvent): void {
 
   switch (event.key.toLowerCase()) {
     case "p":
-      setTool("pen");
+      setTool(ToolType.PEN);
       break;
     case "r":
-      setTool("rect");
+      setTool(ToolType.RECT);
       break;
     case "c":
-      setTool("circle");
+      setTool(ToolType.CIRCLE);
       break;
     case "l":
-      setTool("line");
+      setTool(ToolType.LINE);
       break;
     case "s":
-      setTool("select");
+      setTool(ToolType.SELECT);
       break;
     case "d":
-      setTool("door");
+      setTool(ToolType.DOOR);
       break;
     case "n":
-      setTool("notes");
+      setTool(ToolType.NOTES);
       break;
     case "u":
-      setTool("roughLine");
+      setTool(ToolType.ROUGH_LINE);
       break;
   }
 }
@@ -447,50 +448,13 @@ function handleResize(): void {
   interactionLayer.width(newWidth);
   interactionLayer.height(newHeight);
 
-  drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR);
+  gridLayer.draw();
+
   stage.batchDraw();
 }
 
 function handleColorSchemeChange(e: MediaQueryListEvent): void {
   stage.batchDraw();
-}
-
-function saveToLocalStorage(): void {
-  const gridData: Record<string, ColorEnum> = {};
-  for (const [key, colorEnum] of dungeonMapperGrid) {
-    gridData[key] = colorEnum;
-  }
-  localStorage.setItem("dungeonMapperGrid", JSON.stringify(gridData));
-  localStorage.setItem("dungeonMapperNotes", JSON.stringify(getNotes()));
-  localStorage.setItem(
-    "dungeonMapperChatMessages",
-    JSON.stringify(chatMessages),
-  );
-  localStorage.setItem("dungeonMapperEdges", JSON.stringify(Array.from(edges)));
-}
-
-function loadFromLocalStorage(): void {
-  const savedGrid = JSON.parse(
-    localStorage.getItem("dungeonMapperGrid") || "{}",
-  );
-  Object.entries(savedGrid).forEach(([key, value]) => {
-    dungeonMapperGrid.set(key, value as ColorEnum);
-  });
-
-  const savedNotes = JSON.parse(
-    localStorage.getItem("dungeonMapperNotes") || "{}",
-  );
-  setNotes(savedNotes);
-
-  const savedChatMessages = JSON.parse(
-    localStorage.getItem("dungeonMapperChatMessages") || "[]",
-  );
-  chatMessages = savedChatMessages;
-
-  const savedEdges = JSON.parse(
-    localStorage.getItem("dungeonMapperEdges") || "[]",
-  );
-  loadEdgesFromStorage(savedEdges, edgeLayer, CELL_SIZE);
 }
 
 function displayLoadedChatMessages(): void {
@@ -502,13 +466,13 @@ function displayLoadedChatMessages(): void {
 }
 
 function clearMap(): void {
-  dungeonMapperGrid.clear();
+  state.dungeonMapperGrid.clear();
   cellLayer.destroyChildren();
   cellLayer.draw();
   edges.clear();
   edgeLayer.destroyChildren();
   edgeLayer.draw();
-  saveToLocalStorage();
+  saveToLocalStorage(state.dungeonMapperGrid);
 }
 
 function initializeDOMElements(): void {
@@ -524,7 +488,7 @@ function initializeDOMElements(): void {
         chatMessages.push(message);
         displayLoadedChatMessages();
         chatInput.value = "";
-        saveToLocalStorage();
+        saveToLocalStorage(state.dungeonMapperGrid);
       }
     });
 

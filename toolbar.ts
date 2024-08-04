@@ -1,10 +1,12 @@
+import type Konva from "konva";
 import { ColorEnum, ColorMap } from "./colors";
+import { ToolType } from "./toolTypes";
 
 let currentColor: ColorEnum = ColorEnum.WHITE; // Default color
 let currentRoughLineType: string = "standard"; // Default rough line type
 
 interface Tool {
-  id: string;
+  id: ToolType;
   icon: string;
   title: string;
 }
@@ -12,11 +14,11 @@ interface Tool {
 declare global {
   interface Window {
     state: {
-      currentTool: string;
+      currentTool: ToolType;
       debugMode: boolean;
     };
-    stage: any; // You might want to replace 'any' with the proper Konva.Stage type
-    clearGrid: (cellLayer: any) => void; // Replace 'any' with the proper Konva.Layer type
+    stage: Konva.Layer; // You might want to replace 'any' with the proper Konva.Stage type
+    clearGrid: (cellLayer: Konva.Layer) => void; // Replace 'any' with the proper Konva.Layer type
     edges: Map<string, any>; // Replace 'any' with the proper edge data type
     saveToLocalStorage: () => void;
   }
@@ -27,29 +29,29 @@ export function initializeToolbar(): void {
   if (!toolbar) return;
 
   const tools: Tool[] = [
-    { id: "penTool", icon: "fi-rr-pencil", title: "Pen Tool" },
-    { id: "rectTool", icon: "fi-rr-square", title: "Rectangle Tool" },
-    { id: "circleTool", icon: "fi-rr-circle", title: "Circle Tool" },
-    { id: "lineTool", icon: "fi-rr-line-width", title: "Line Tool" },
-    { id: "selectTool", icon: "fi-rr-cursor", title: "Select Tool" },
-    { id: "doorTool", icon: "fi-rr-door-open", title: "Door Tool" },
-    { id: "notesTool", icon: "fi-rr-note", title: "Notes Tool" },
-    { id: "roughLineTool", icon: "fi-rr-edit", title: "Rough Line Tool" },
-    { id: "downloadTool", icon: "fi-rr-download", title: "Download Canvas" },
-    { id: "clearMapTool", icon: "fi-rr-trash", title: "Clear Map" },
+    { id: ToolType.PEN, icon: "fi-rr-pencil", title: "Pen Tool" },
+    { id: ToolType.RECT, icon: "fi-rr-square", title: "Rectangle Tool" },
+    { id: ToolType.CIRCLE, icon: "fi-rr-circle", title: "Circle Tool" },
+    { id: ToolType.LINE, icon: "fi-rr-line-width", title: "Line Tool" },
+    { id: ToolType.SELECT, icon: "fi-rr-cursor", title: "Select Tool" },
+    { id: ToolType.DOOR, icon: "fi-rr-door-open", title: "Door Tool" },
+    { id: ToolType.NOTES, icon: "fi-rr-note", title: "Notes Tool" },
+    { id: ToolType.ROUGH_LINE, icon: "fi-rr-edit", title: "Rough Line Tool" },
+    { id: ToolType.DOWNLOAD, icon: "fi-rr-download", title: "Download Canvas" },
+    { id: ToolType.CLEAR_MAP, icon: "fi-rr-trash", title: "Clear Map" },
   ];
 
   tools.forEach((tool) => {
     const button = document.createElement("button");
-    button.id = tool.id;
+    button.id = `${tool.id}Tool`;
     button.className = "btn btn-outline-secondary mb-2";
     button.title = tool.title;
     button.innerHTML = `<i class="fi ${tool.icon}"></i>`;
     button.addEventListener("click", () => {
-      if (tool.id === "clearMapTool") {
+      if (tool.id === ToolType.CLEAR_MAP) {
         clearMap();
       } else {
-        setTool(tool.id.replace("Tool", ""));
+        setTool(tool.id);
       }
     });
     toolbar.appendChild(button);
@@ -137,18 +139,9 @@ function initializeRoughLineDropdown(): void {
   });
 }
 
-export function setTool(tool: string): void {
+export function setTool(tool: ToolType): void {
   window.state.currentTool = tool;
-  const tools = [
-    "pen",
-    "rect",
-    "circle",
-    "line",
-    "select",
-    "door",
-    "notes",
-    "roughLine",
-  ];
+  const tools = Object.values(ToolType);
   tools.forEach((t) => {
     const element = document.getElementById(`${t}Tool`);
     if (element) {
@@ -174,7 +167,7 @@ function setRoughLineType(type: string): void {
   currentRoughLineType = type;
   console.log(`Rough line type set to: ${type}`);
   // For now, all options do the same thing
-  setTool("roughLine");
+  setTool(ToolType.ROUGH_LINE);
 }
 
 function toggleDebugMode(): void {

@@ -2,6 +2,7 @@ import Konva from "konva";
 import { snapToGrid } from "./utils";
 import { getCurrentColor, getCurrentRoughLineType } from "./toolbar";
 import { ColorMap, ColorEnum } from "./colors";
+import { ToolType } from "./toolTypes";
 
 const DOOR_COLOR = "black";
 const DOOR_FILL_COLOR = "#FFFFFF";
@@ -11,7 +12,7 @@ let edgePreview: Konva.Group;
 let previewLayer: Konva.Layer;
 let edges = new Map<string, EdgeData>();
 
-interface EdgeData {
+export interface EdgeData {
   type: "door" | "roughLine";
   roughLineType?: string;
   color?: ColorEnum;
@@ -19,7 +20,7 @@ interface EdgeData {
 }
 
 interface State {
-  currentTool: string;
+  currentTool: ToolType;
 }
 
 export function initializeEdgePreview(layer: Konva.Layer): void {
@@ -50,7 +51,10 @@ export function updateEdgePreview(
   CELL_SIZE: number,
   state: State,
 ): void {
-  if (state.currentTool !== "door" && state.currentTool !== "roughLine") {
+  if (
+    state.currentTool !== ToolType.DOOR &&
+    state.currentTool !== ToolType.ROUGH_LINE
+  ) {
     edgePreview.visible(false);
     previewLayer.batchDraw();
     return;
@@ -92,7 +96,11 @@ export function updateEdgePreview(
   }
 }
 
-export function placeEdge(edgeLayer: Konva.Layer, CELL_SIZE: number): void {
+export function placeEdge(
+  edgeLayer: Konva.Layer,
+  CELL_SIZE: number,
+  state: State,
+): void {
   if (!edgePreview.visible()) return;
 
   const line = edgePreview.findOne("Line") as Konva.Line;
@@ -111,10 +119,10 @@ export function placeEdge(edgeLayer: Konva.Layer, CELL_SIZE: number): void {
   let edge: Konva.Group;
   let edgeData: EdgeData;
 
-  if (state.currentTool === "door") {
+  if (state.currentTool === ToolType.DOOR) {
     edge = generateDoor(points[0], points[1], points[2], points[3], CELL_SIZE);
     edgeData = { type: "door", konvaObject: edge };
-  } else if (state.currentTool === "roughLine") {
+  } else if (state.currentTool === ToolType.ROUGH_LINE) {
     const currentRoughLineType = getCurrentRoughLineType();
     const currentColor = getCurrentColor();
     edge = generateRoughLine(

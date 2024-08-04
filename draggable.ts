@@ -12,15 +12,6 @@ function initializeGrid(
   cellLayer.draw();
 }
 
-function drawGrid(
-  stage: Konva.Stage,
-  gridLayer: Konva.Layer,
-  CELL_SIZE: number,
-  GRID_COLOR: string,
-): void {
-  gridLayer.draw();
-}
-
 function toggleCell(
   x: number,
   y: number,
@@ -109,11 +100,4 @@ export function makeDraggable(element: HTMLElement): void {
   }
 }
 
-export {
-  initializeGrid,
-  drawGrid,
-  toggleCell,
-  clearGrid,
-  renderGrid,
-  dungeonMapperGrid,
-};
+export { initializeGrid, toggleCell, clearGrid, renderGrid, dungeonMapperGrid };

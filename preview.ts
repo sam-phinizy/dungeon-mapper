@@ -1,6 +1,7 @@
 import Konva from "konva";
 import { snapToGrid } from "./utils";
 import { ColorEnum } from "./colors";
+import { ToolType } from "./toolTypes";
 
 let interactionLayer: Konva.Layer;
 
@@ -36,7 +37,7 @@ export function updatePenPreview(
 export function shapePreview(
   startPos: Konva.Vector2d,
   endPos: Konva.Vector2d,
-  tool: string,
+  tool: ToolType,
   CELL_SIZE: number,
   currentColor: string,
 ): void {
@@ -47,7 +48,7 @@ export function shapePreview(
 
   let shape: Konva.Shape;
   let text: Konva.Text | undefined;
-  if (tool === "rect") {
+  if (tool === ToolType.RECT) {
     shape = new Konva.Rect({
       x: Math.min(startPos.x, endPos.x),
       y: Math.min(startPos.y, endPos.y),
@@ -66,7 +67,7 @@ export function shapePreview(
       fontFamily: "Calibri",
       fill: currentColor,
     });
-  } else if (tool === "circle") {
+  } else if (tool === ToolType.CIRCLE) {
     const radius =
       Math.sqrt(
         Math.pow(endPos.x - startPos.x, 2) + Math.pow(endPos.y - startPos.y, 2),
@@ -78,7 +79,7 @@ export function shapePreview(
       stroke: currentColor,
       strokeWidth: 2,
     });
-  } else if (tool === "line") {
+  } else if (tool === ToolType.LINE) {
     shape = new Konva.Line({
       points: [
         startPos.x + CELL_SIZE / 2,
