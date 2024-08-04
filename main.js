@@ -512,22 +512,26 @@ function addToLibrary() {
   const maxCol = Math.max(...selectedCells.map((cell) => cell.col));
   const maxRow = Math.max(...selectedCells.map((cell) => cell.row));
 
-  const selectedEdges = Array.from(edges).filter(edge => 
-    Math.min(edge.startX, edge.endX) >= minCol * CELL_SIZE &&
-    Math.max(edge.startX, edge.endX) <= (maxCol + 1) * CELL_SIZE &&
-    Math.min(edge.startY, edge.endY) >= minRow * CELL_SIZE &&
-    Math.max(edge.startY, edge.endY) <= (maxRow + 1) * CELL_SIZE
-  );
+  const selectedEdges = Array.from(edges).filter(([key, edge]) => {
+    const [startX, startY, endX, endY] = key.split(',').map(Number);
+    return Math.min(startX, endX) >= minCol * CELL_SIZE &&
+           Math.max(startX, endX) <= (maxCol + 1) * CELL_SIZE &&
+           Math.min(startY, endY) >= minRow * CELL_SIZE &&
+           Math.max(startY, endY) <= (maxRow + 1) * CELL_SIZE;
+  });
 
   const libraryItem = {
     cells: selectedCells,
-    edges: selectedEdges.map(edge => ({
-      ...edge,
-      startX: edge.startX - minCol * CELL_SIZE,
-      startY: edge.startY - minRow * CELL_SIZE,
-      endX: edge.endX - minCol * CELL_SIZE,
-      endY: edge.endY - minRow * CELL_SIZE
-    })),
+    edges: selectedEdges.map(([key, edge]) => {
+      const [startX, startY, endX, endY] = key.split(',').map(Number);
+      return {
+        ...edge,
+        startX: startX - minCol * CELL_SIZE,
+        startY: startY - minRow * CELL_SIZE,
+        endX: endX - minCol * CELL_SIZE,
+        endY: endY - minRow * CELL_SIZE
+      };
+    }),
     width: maxCol - minCol + 1,
     height: maxRow - minRow + 1,
   };
