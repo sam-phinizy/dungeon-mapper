@@ -151,6 +151,22 @@ function setRoughLineType(type) {
   setTool("roughLine");
 }
 
+function toggleDebugMode() {
+  window.state.debugMode = !window.state.debugMode;
+  document
+    .getElementById("debugTool")
+    .classList.toggle("active-tool", window.state.debugMode);
+}
+
+function initializeDebugTool() {
+  const debugTool = document.createElement("button");
+  debugTool.id = "debugTool";
+  debugTool.innerHTML = "🐞"; // Bug emoji as the icon
+  debugTool.title = "Toggle Debug Mode";
+  debugTool.addEventListener("click", toggleDebugMode);
+  document.getElementById("toolbar").appendChild(debugTool);
+}
+
 function getCurrentRoughLineType() {
   return currentRoughLineType;
 }
@@ -188,4 +204,5 @@ export {
   setColor,
   getCurrentColor,
   getCurrentRoughLineType,
+  initializeDebugTool,
 };
