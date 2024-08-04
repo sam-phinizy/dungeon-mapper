@@ -157,21 +157,24 @@ function handleDrop(e) {
   const item = JSON.parse(e.dataTransfer.getData("text/plain"));
   const pos = stage.getPointerPosition();
   const stagePos = stage.position();
-  
+
   // Adjust the position based on the stage's current position and scale
-  const adjustedPos = {
-    x: (pos.x - stagePos.x) / stage.scaleX(),
-    y: (pos.y - stagePos.y) / stage.scaleY()
-  };
-  
-  const snappedPos = snapToGrid(adjustedPos.x, adjustedPos.y, CELL_SIZE);
+  // const adjustedPos = {
+  //   x: (pos.x - stagePos.x) / stage.scaleX(x),
+  //   y: (pos.y - stagePos.y) / stage.scaleY(),
+  // };
+
+  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
 
   const minCol = Math.min(...item.cells.map((c) => c.col));
   const minRow = Math.min(...item.cells.map((c) => c.row));
+  console.log(`Dropping at (${pos.x}, ${pos.y})`);
+  console.log(`Snapped to (${snappedPos.x}, ${snappedPos.y})`);
+  console.log(`Min col: ${minCol}, Min row: ${minRow}`);
 
   item.cells.forEach((cell) => {
-    const x = Math.floor(snappedPos.x / CELL_SIZE) + (cell.col - minCol);
-    const y = Math.floor(snappedPos.y / CELL_SIZE) + (cell.row - minRow);
+    const x = Math.floor(snappedPos.x / CELL_SIZE);
+    const y = Math.floor(snappedPos.y / CELL_SIZE);
     toggleCell(x, y, cellLayer, CELL_SIZE, cell.state);
   });
 
@@ -240,6 +243,7 @@ const handleStageMouseDown = (e) => {
  */
 function handleStageMouseMove(e) {
   const pos = stage.getPointerPosition();
+  console.log(pos, snapToGrid(pos.x, pos.y, CELL_SIZE));
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
   if (state.currentTool === "door" || state.currentTool === "roughLine") {
     updateEdgePreview(pos, CELL_SIZE, state);
