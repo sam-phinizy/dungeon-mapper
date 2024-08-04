@@ -100,6 +100,10 @@ const init = () => {
   initializeDOMElements();
 };
 
+/**
+ * Initializes the Konva stage and layers.
+ * Sets up the stage container and adds event listeners for drag and drop.
+ */
 const initializeStage = () => {
   stage = new Konva.Stage({
     container: "map-area",
@@ -132,6 +136,10 @@ const initializeStage = () => {
   container.addEventListener("drop", handleDrop);
 };
 
+/**
+ * Handles the drop event for dragged library items.
+ * @param {DragEvent} e - The drop event.
+ */
 function handleDrop(e) {
   e.preventDefault();
   const item = JSON.parse(e.dataTransfer.getData("text/plain"));
@@ -159,12 +167,20 @@ function handleDrop(e) {
   debouncedSave();
 }
 
+/**
+ * Calculates the available width for the stage.
+ * @returns {number} The available width in pixels.
+ */
 function calculateAvailableWidth() {
   const sidebar = document.getElementById("sidebar");
   const resizer = document.getElementById("sidebar-resizer");
   return window.innerWidth - sidebar.offsetWidth - resizer.offsetWidth;
 }
 
+/**
+ * Handles mouse down events on the stage.
+ * @param {Konva.KonvaEventObject} e - The Konva event object.
+ */
 const handleStageMouseDown = (e) => {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
@@ -206,6 +222,10 @@ const handleStageMouseDown = (e) => {
   }
 };
 
+/**
+ * Handles mouse move events on the stage.
+ * @param {Konva.KonvaEventObject} e - The Konva event object.
+ */
 function handleStageMouseMove(e) {
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
@@ -240,6 +260,9 @@ function handleStageMouseMove(e) {
   }
 }
 
+/**
+ * Handles mouse up events on the stage.
+ */
 function handleStageMouseUp() {
   if (state.currentTool === "select") {
     endSelection();
@@ -266,6 +289,12 @@ function handleStageMouseUp() {
   }
 }
 
+/**
+ * Draws a shape on the cell layer based on the current tool.
+ * @param {{x: number, y: number}} startPos - The starting position of the shape.
+ * @param {{x: number, y: number}} endPos - The ending position of the shape.
+ * @param {number} currentColor - The color enum for the shape.
+ */
 function drawShape(startPos, endPos, currentColor) {
   const startCol = Math.floor(startPos.x / CELL_SIZE);
   const startRow = Math.floor(startPos.y / CELL_SIZE);
@@ -341,6 +370,10 @@ function drawShape(startPos, endPos, currentColor) {
   cellLayer.batchDraw();
 }
 
+/**
+ * Handles keyboard shortcuts for tool selection.
+ * @param {KeyboardEvent} event - The keyboard event.
+ */
 function handleKeyboardShortcuts(event) {
   // Ignore keyboard shortcuts when typing in input fields
   if (event.target.tagName === "INPUT" || event.target.tagName === "TEXTAREA") {
@@ -375,6 +408,9 @@ function handleKeyboardShortcuts(event) {
   }
 }
 
+/**
+ * Handles window resize events, adjusting the stage and layers accordingly.
+ */
 function handleResize() {
   const sidebar = document.getElementById("sidebar");
   const resizer = document.getElementById("sidebar-resizer");
@@ -397,10 +433,17 @@ function handleResize() {
   stage.batchDraw();
 }
 
+/**
+ * Handles color scheme changes (light/dark mode).
+ * @param {MediaQueryListEvent} e - The media query change event.
+ */
 function handleColorSchemeChange(e) {
   stage.batchDraw();
 }
 
+/**
+ * Saves the current state of the application to local storage.
+ */
 function saveToLocalStorage() {
   const gridData = {};
   for (const [key, colorEnum] of dungeonMapperGrid) {
@@ -421,6 +464,9 @@ function saveToLocalStorage() {
   console.log("Saved to local storage");
 }
 
+/**
+ * Loads the application state from local storage.
+ */
 function loadFromLocalStorage() {
   const savedGrid = JSON.parse(localStorage.getItem("dungeonMapperGrid"));
   console.log("Loaded grid:", savedGrid);
@@ -452,6 +498,9 @@ function loadFromLocalStorage() {
   }
 }
 
+/**
+ * Displays the loaded chat messages in the chat container.
+ */
 function displayLoadedChatMessages() {
   const chatMessagesContainer = document.getElementById("chat-messages");
   chatMessagesContainer.innerHTML = "";
@@ -460,6 +509,10 @@ function displayLoadedChatMessages() {
   });
 }
 
+/**
+ * Adds a new message to the chat and saves it to local storage.
+ * @param {string} message - The message to add.
+ */
 function addMessage(message) {
   const messageElement = document.createElement("div");
   messageElement.className = "chat-message";
@@ -472,6 +525,9 @@ function addMessage(message) {
   saveToLocalStorage();
 }
 
+/**
+ * Adds the currently selected cells to the library.
+ */
 function addToLibrary() {
   const selectedCells = getSelectedCells(dungeonMapperGrid, CELL_SIZE);
   if (selectedCells.length === 0) return;
@@ -497,6 +553,10 @@ function addToLibrary() {
   renderLibraryItem(libraryItem);
 }
 
+/**
+ * Renders a library item in the library content area.
+ * @param {Object} item - The library item to render.
+ */
 function renderLibraryItem(item) {
   const libraryContent = document.getElementById("library-content");
   const itemElement = document.createElement("div");
@@ -537,6 +597,9 @@ function renderLibraryItem(item) {
   });
 }
 
+/**
+ * Loads the library items from local storage and renders them.
+ */
 function loadLibrary() {
   const library = JSON.parse(
     localStorage.getItem("dungeonMapperLibrary") || "[]",
@@ -544,6 +607,9 @@ function loadLibrary() {
   library.forEach(renderLibraryItem);
 }
 
+/**
+ * Initializes DOM elements and sets up event listeners.
+ */
 function initializeDOMElements() {
   console.log("initialize");
   // Make the floating tools window draggable by its title bar
