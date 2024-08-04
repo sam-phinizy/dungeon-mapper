@@ -78,6 +78,7 @@ function getSelectedCells(dungeonMapperGrid, CELL_SIZE) {
       }
     }
   }
+  console.log(selectedCells);
   return selectedCells;
 }
 
