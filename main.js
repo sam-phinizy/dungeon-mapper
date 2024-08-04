@@ -48,7 +48,7 @@ const GRID_COLOR =
     : "#cccccc";
 const PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
 
-let stage, gridLayer, cellLayer, edgeLayer, interactionLayer, debugLayer;
+let stage, gridLayer, cellLayer, edgeLayer, interactionLayer, debugLayer, debugText;
 let chatMessages = [];
 
 // Create a state object to hold shared state
@@ -138,7 +138,16 @@ const initializeStage = () => {
 
   stage.add(gridLayer, cellLayer, edgeLayer, interactionLayer, debugLayer);
 
-  let debugText;
+  debugText = new Konva.Text({
+    x: 10,
+    y: 10,
+    text: "",
+    fontSize: 14,
+    fontFamily: "Arial",
+    fill: "red",
+    visible: false,
+  });
+  debugLayer.add(debugText);
 
   Object.assign(window, {
     stage,
@@ -147,6 +156,7 @@ const initializeStage = () => {
     edgeLayer,
     interactionLayer,
     debugLayer,
+    debugText,
     CELL_SIZE,
     state,
   });
