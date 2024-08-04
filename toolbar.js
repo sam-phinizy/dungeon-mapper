@@ -16,6 +16,7 @@ function initializeToolbar() {
     { id: "notesTool", icon: "fi-rr-note", title: "Notes Tool" },
     { id: "roughLineTool", icon: "fi-rr-edit", title: "Rough Line Tool" },
     { id: "downloadTool", icon: "fi-rr-download", title: "Download Canvas" },
+    { id: "clearMapTool", icon: "fi-rr-trash", title: "Clear Map" },
   ];
 
   tools.forEach((tool) => {
@@ -24,9 +25,13 @@ function initializeToolbar() {
     button.className = "btn btn-outline-secondary mb-2";
     button.title = tool.title;
     button.innerHTML = `<i class="fi ${tool.icon}"></i>`;
-    button.addEventListener("click", () =>
-      setTool(tool.id.replace("Tool", "")),
-    );
+    button.addEventListener("click", () => {
+      if (tool.id === "clearMapTool") {
+        clearMap();
+      } else {
+        setTool(tool.id.replace("Tool", ""));
+      }
+    });
     toolbar.appendChild(button);
   });
 
@@ -199,6 +204,16 @@ function downloadCanvas() {
   document.body.removeChild(link);
 }
 
+function clearMap() {
+  if (confirm("Are you sure you want to clear the entire map?")) {
+    window.clearGrid(window.cellLayer);
+    window.edges.clear();
+    window.edgeLayer.destroyChildren();
+    window.edgeLayer.draw();
+    window.saveToLocalStorage();
+  }
+}
+
 export {
   initializeToolbar,
   setTool,
@@ -206,4 +221,5 @@ export {
   getCurrentColor,
   getCurrentRoughLineType,
   initializeDebugTool,
+  clearMap,
 };

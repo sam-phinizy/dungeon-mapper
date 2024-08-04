@@ -17,6 +17,7 @@ import {
   setTool,
   getCurrentColor,
   initializeDebugTool,
+  clearMap,
 } from "./toolbar.js";
 import {
   initializeNotes,
@@ -48,7 +49,13 @@ const GRID_COLOR =
     : "#cccccc";
 const PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
 
-let stage, gridLayer, cellLayer, edgeLayer, interactionLayer, debugLayer, debugText;
+let stage,
+  gridLayer,
+  cellLayer,
+  edgeLayer,
+  interactionLayer,
+  debugLayer,
+  debugText;
 let chatMessages = [];
 
 // Create a state object to hold shared state
@@ -117,6 +124,10 @@ const init = () => {
 
   setTool("pen");
   initializeDOMElements();
+
+  // Make clearGrid and edges available globally
+  window.clearGrid = clearMap;
+  window.edges = edges;
 };
 
 /**
@@ -633,13 +644,13 @@ function renderLibraryItem(item) {
 
   if (item.edgesAndDoors && Array.isArray(item.edgesAndDoors)) {
     item.edgesAndDoors.forEach((edgeOrDoor) => {
-      if (edgeOrDoor.type === 'door') {
+      if (edgeOrDoor.type === "door") {
         const door = generateDoor(
           (edgeOrDoor.startX * 10) / CELL_SIZE,
           (edgeOrDoor.startY * 10) / CELL_SIZE,
           (edgeOrDoor.endX * 10) / CELL_SIZE,
           (edgeOrDoor.endY * 10) / CELL_SIZE,
-          10
+          10,
         );
         itemLayer.add(door);
       } else {
@@ -686,18 +697,23 @@ function startLibraryItemPreview(item) {
 
   if (item.edgesAndDoors && Array.isArray(item.edgesAndDoors)) {
     item.edgesAndDoors.forEach((edgeOrDoor) => {
-      if (edgeOrDoor.type === 'door') {
+      if (edgeOrDoor.type === "door") {
         const door = generateDoor(
           edgeOrDoor.startX,
           edgeOrDoor.startY,
           edgeOrDoor.endX,
           edgeOrDoor.endY,
-          CELL_SIZE
+          CELL_SIZE,
         );
         previewGroup.add(door);
       } else {
         const line = new Konva.Line({
-          points: [edgeOrDoor.startX, edgeOrDoor.startY, edgeOrDoor.endX, edgeOrDoor.endY],
+          points: [
+            edgeOrDoor.startX,
+            edgeOrDoor.startY,
+            edgeOrDoor.endX,
+            edgeOrDoor.endY,
+          ],
           stroke: edgeOrDoor.color,
           strokeWidth: edgeOrDoor.strokeWidth,
           lineCap: "round",
