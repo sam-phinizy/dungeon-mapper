@@ -204,7 +204,7 @@ const handleStageMouseDown = (e) => {
       debouncedSave();
       break;
     case "select":
-      startSelection(snappedPos, selectionLayer, CELL_SIZE);
+      startSelection(snappedPos, interactionLayer, CELL_SIZE);
       break;
     case "pen":
       state.isDrawing = true;
