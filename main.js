@@ -144,8 +144,6 @@ const initializeStage = () => {
   container.addEventListener("dragover", (e) => {
     e.preventDefault();
   });
-
-  container.addEventListener("drop", handleDrop);
 };
 
 /**
