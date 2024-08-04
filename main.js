@@ -133,6 +133,8 @@ const initializeStage = () => {
 
   stage.add(gridLayer, cellLayer, edgeLayer, interactionLayer, debugLayer);
 
+  let debugText;
+
   Object.assign(window, {
     stage,
     gridLayer,
