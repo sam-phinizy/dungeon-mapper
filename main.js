@@ -507,16 +507,29 @@ function addToLibrary() {
   const selectedCells = getSelectedCells(dungeonMapperGrid, CELL_SIZE);
   if (selectedCells.length === 0) return;
 
+  const minCol = Math.min(...selectedCells.map((cell) => cell.col));
+  const minRow = Math.min(...selectedCells.map((cell) => cell.row));
+  const maxCol = Math.max(...selectedCells.map((cell) => cell.col));
+  const maxRow = Math.max(...selectedCells.map((cell) => cell.row));
+
+  const selectedEdges = Array.from(edges).filter(edge => 
+    edge.startX >= minCol * CELL_SIZE && edge.startX <= (maxCol + 1) * CELL_SIZE &&
+    edge.startY >= minRow * CELL_SIZE && edge.startY <= (maxRow + 1) * CELL_SIZE &&
+    edge.endX >= minCol * CELL_SIZE && edge.endX <= (maxCol + 1) * CELL_SIZE &&
+    edge.endY >= minRow * CELL_SIZE && edge.endY <= (maxRow + 1) * CELL_SIZE
+  );
+
   const libraryItem = {
     cells: selectedCells,
-    width:
-      Math.max(...selectedCells.map((cell) => cell.col)) -
-      Math.min(...selectedCells.map((cell) => cell.col)) +
-      1,
-    height:
-      Math.max(...selectedCells.map((cell) => cell.row)) -
-      Math.min(...selectedCells.map((cell) => cell.row)) +
-      1,
+    edges: selectedEdges.map(edge => ({
+      ...edge,
+      startX: edge.startX - minCol * CELL_SIZE,
+      startY: edge.startY - minRow * CELL_SIZE,
+      endX: edge.endX - minCol * CELL_SIZE,
+      endY: edge.endY - minRow * CELL_SIZE
+    })),
+    width: maxCol - minCol + 1,
+    height: maxRow - minRow + 1,
   };
 
   const library = JSON.parse(
@@ -561,6 +574,17 @@ function renderLibraryItem(item) {
       fill: ColorMap[cell.state],
     });
     itemLayer.add(rect);
+  });
+
+  item.edges.forEach((edge) => {
+    const line = new Konva.Line({
+      points: [edge.startX * 10 / CELL_SIZE, edge.startY * 10 / CELL_SIZE, edge.endX * 10 / CELL_SIZE, edge.endY * 10 / CELL_SIZE],
+      stroke: edge.color,
+      strokeWidth: edge.strokeWidth * 10 / CELL_SIZE,
+      lineCap: 'round',
+      lineJoin: 'round',
+    });
+    itemLayer.add(line);
   });
 
   itemLayer.draw();
