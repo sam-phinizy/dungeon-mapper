@@ -1,5 +1,15 @@
 {
   "dependencies": {
+    "konva": "^9.3.14",
     "prettier": "^3.3.3"
+  },
+  "name": "dungeon_mapper_3",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
   }
 }

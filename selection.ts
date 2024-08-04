@@ -1,15 +1,25 @@
-// selection.js
-
-import { snapToGrid } from "./utils.js";
+import { Konva } from "konva";
+import { snapToGrid } from "./utils";
+import { ColorEnum } from "./colors";
 
 const SELECTION_COLOR = "rgba(0, 0, 255, 0.3)";
 
 let isSelecting = false;
-let selectionRect;
-let selectionStart = { x: 0, y: 0 };
-let interactionLayer;
+let selectionRect: Konva.Rect | null = null;
+let selectionStart: Konva.Vector2d = { x: 0, y: 0 };
+let interactionLayer: Konva.Layer;
 
-function startSelection(pos, layer, CELL_SIZE) {
+interface SelectedCell {
+  row: number;
+  col: number;
+  state: ColorEnum | null;
+}
+
+export function startSelection(
+  pos: Konva.Vector2d,
+  layer: Konva.Layer,
+  CELL_SIZE: number,
+): void {
   interactionLayer = layer;
   if (selectionRect) {
     selectionRect.destroy();
@@ -27,7 +37,7 @@ function startSelection(pos, layer, CELL_SIZE) {
   interactionLayer.draw();
 }
 
-function updateSelection(pos, CELL_SIZE) {
+export function updateSelection(pos: Konva.Vector2d, CELL_SIZE: number): void {
   if (!isSelecting || !selectionRect) return;
 
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
@@ -42,11 +52,11 @@ function updateSelection(pos, CELL_SIZE) {
   interactionLayer.batchDraw();
 }
 
-function endSelection() {
+export function endSelection(): void {
   isSelecting = false;
 }
 
-function clearSelection() {
+export function clearSelection(): void {
   if (selectionRect) {
     selectionRect.destroy();
     selectionRect = null;
@@ -56,7 +66,10 @@ function clearSelection() {
   }
 }
 
-function getSelectedCells(dungeonMapperGrid, CELL_SIZE) {
+export function getSelectedCells(
+  dungeonMapperGrid: Map<string, ColorEnum>,
+  CELL_SIZE: number,
+): SelectedCell[] {
   if (!selectionRect) return [];
 
   const x = selectionRect.x();
@@ -69,22 +82,18 @@ function getSelectedCells(dungeonMapperGrid, CELL_SIZE) {
   const endCol = Math.floor((x + width - 1) / CELL_SIZE);
   const endRow = Math.floor((y + height - 1) / CELL_SIZE);
 
-  const selectedCells = [];
+  const selectedCells: SelectedCell[] = [];
   for (let row = startRow; row <= endRow; row++) {
     for (let col = startCol; col <= endCol; col++) {
       const key = `${col},${row}`;
       const state = dungeonMapperGrid.get(key);
-      selectedCells.push({ row, col, state: state !== undefined ? state : null });
+      selectedCells.push({
+        row,
+        col,
+        state: state !== undefined ? state : null,
+      });
     }
   }
   console.log(selectedCells);
   return selectedCells;
 }
-
-export {
-  startSelection,
-  updateSelection,
-  endSelection,
-  getSelectedCells,
-  clearSelection,
-};

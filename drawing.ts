@@ -1,19 +1,33 @@
-// drawing.js
+import Konva from "konva";
+import { snapToGrid } from "./utils";
+import { ColorEnum, ColorMap } from "./colors";
 
-import { snapToGrid } from "./utils.js";
-import { ColorEnum, ColorMap } from "./colors.js";
+const dungeonMapperGrid = new Map<string, ColorEnum>();
 
-const dungeonMapperGrid = new Map();
-
-function initializeGrid(stage, cellLayer, CELL_SIZE) {
+function initializeGrid(
+  stage: Konva.Stage,
+  cellLayer: Konva.Layer,
+  CELL_SIZE: number,
+): void {
   cellLayer.draw();
 }
 
-function drawGrid(stage, gridLayer, CELL_SIZE, GRID_COLOR) {
+function drawGrid(
+  stage: Konva.Stage,
+  gridLayer: Konva.Layer,
+  CELL_SIZE: number,
+  GRID_COLOR: string,
+): void {
   gridLayer.draw();
 }
 
-function toggleCell(x, y, cellLayer, CELL_SIZE, currentColor) {
+function toggleCell(
+  x: number,
+  y: number,
+  cellLayer: Konva.Layer,
+  CELL_SIZE: number,
+  currentColor: ColorEnum,
+): void {
   console.log(`Toggling cell at (${x}, ${y}) with color ${currentColor}`);
   const key = `${x},${y}`;
   const currentValue = dungeonMapperGrid.get(key);
@@ -24,7 +38,7 @@ function toggleCell(x, y, cellLayer, CELL_SIZE, currentColor) {
     dungeonMapperGrid.delete(key);
   }
 
-  const cell = cellLayer.findOne(`#cell-${x}-${y}`);
+  const cell = cellLayer.findOne(`#cell-${x}-${y}`) as Konva.Rect | null;
   if (cell) {
     cell.fill(ColorMap[currentColor]);
   } else {
@@ -41,13 +55,13 @@ function toggleCell(x, y, cellLayer, CELL_SIZE, currentColor) {
   cellLayer.batchDraw();
 }
 
-function clearGrid(cellLayer) {
+function clearGrid(cellLayer: Konva.Layer): void {
   dungeonMapperGrid.clear();
   cellLayer.destroyChildren();
   cellLayer.draw();
 }
 
-function renderGrid(cellLayer, CELL_SIZE) {
+function renderGrid(cellLayer: Konva.Layer, CELL_SIZE: number): void {
   cellLayer.destroyChildren();
   for (const [key, colorEnum] of dungeonMapperGrid) {
     const [x, y] = key.split(",").map(Number);

@@ -1,16 +1,28 @@
-import { snapToGrid } from "./utils.js";
-import { getCurrentColor, getCurrentRoughLineType } from "./toolbar.js";
-import { ColorMap } from "./colors.js";
+import { Konva } from 'konva';
+import { snapToGrid } from "./utils";
+import { getCurrentColor, getCurrentRoughLineType } from "./toolbar";
+import { ColorMap, ColorEnum } from "./colors";
 
 const DOOR_COLOR = "black";
 const DOOR_FILL_COLOR = "#FFFFFF";
 const EDGE_PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
 
-let edgePreview;
-let previewLayer;
-let edges = new Map(); // Store all edges (doors and rough lines) by their edge key
+let edgePreview: Konva.Group;
+let previewLayer: Konva.Layer;
+let edges = new Map<string, EdgeData>();
 
-function initializeEdgePreview(layer) {
+interface EdgeData {
+  type: 'door' | 'roughLine';
+  roughLineType?: string;
+  color?: ColorEnum;
+  konvaObject: Konva.Group;
+}
+
+interface State {
+  currentTool: string;
+}
+
+export function initializeEdgePreview(layer: Konva.Layer): void {
   previewLayer = layer;
   edgePreview = new Konva.Group({
     visible: false,
@@ -26,14 +38,14 @@ function initializeEdgePreview(layer) {
   previewLayer.add(edgePreview);
 }
 
-function ensureValidEdgePreview() {
+function ensureValidEdgePreview(): void {
   if (!edgePreview || !edgePreview.findOne("Line")) {
     console.warn("Edge preview not properly initialized. Reinitializing...");
     initializeEdgePreview(previewLayer);
   }
 }
 
-function updateEdgePreview(pos, CELL_SIZE, state) {
+export function updateEdgePreview(pos: Konva.Vector2d, CELL_SIZE: number, state: State): void {
   if (state.currentTool !== "door" && state.currentTool !== "roughLine") {
     edgePreview.visible(false);
     previewLayer.batchDraw();
@@ -48,7 +60,7 @@ function updateEdgePreview(pos, CELL_SIZE, state) {
   const xOffset = pos.x - snappedPos.x;
   const yOffset = pos.y - snappedPos.y;
 
-  let startPoint, endPoint;
+  let startPoint: Konva.Vector2d, endPoint: Konva.Vector2d;
 
   if (xOffset < yOffset && xOffset < CELL_SIZE - yOffset) {
     // Left edge
@@ -68,7 +80,7 @@ function updateEdgePreview(pos, CELL_SIZE, state) {
     endPoint = { x: snappedPos.x + CELL_SIZE, y: snappedPos.y + CELL_SIZE };
   }
 
-  const previewLine = edgePreview.findOne("Line");
+  const previewLine = edgePreview.findOne("Line") as Konva.Line;
   if (previewLine) {
     previewLine.points([startPoint.x, startPoint.y, endPoint.x, endPoint.y]);
     edgePreview.visible(true);
@@ -76,24 +88,24 @@ function updateEdgePreview(pos, CELL_SIZE, state) {
   }
 }
 
-function placeEdge(edgeLayer, CELL_SIZE) {
+export function placeEdge(edgeLayer: Konva.Layer, CELL_SIZE: number): void {
   if (!edgePreview.visible()) return;
 
-  const line = edgePreview.findOne("Line");
+  const line = edgePreview.findOne("Line") as Konva.Line;
   const points = line.points();
 
   const edgeKey = `${points[0]},${points[1]}-${points[2]},${points[3]}`;
 
   if (edges.has(edgeKey)) {
     const existingEdge = edges.get(edgeKey);
-    if (existingEdge.konvaObject) {
+    if (existingEdge?.konvaObject) {
       existingEdge.konvaObject.destroy();
     }
     edges.delete(edgeKey);
   }
 
-  let edge;
-  let edgeData = {};
+  let edge: Konva.Group;
+  let edgeData: EdgeData;
 
   if (state.currentTool === "door") {
     edge = generateDoor(points[0], points[1], points[2], points[3], CELL_SIZE);
@@ -116,29 +128,26 @@ function placeEdge(edgeLayer, CELL_SIZE) {
       color: currentColor,
       konvaObject: edge,
     };
+  } else {
+    return;  // Handle unexpected case
   }
 
   edgeLayer.add(edge);
   edges.set(edgeKey, edgeData);
   edgeLayer.batchDraw();
 
-  if (typeof window.saveToLocalStorage === "function") {
-    window.saveToLocalStorage();
+  if (typeof (window as any).saveToLocalStorage === "function") {
+    (window as any).saveToLocalStorage();
   }
 }
-function clearEdges(edgeLayer) {
-  edges.forEach((edge) => edge.destroy());
-  edges.clear();
-  edgeLayer.draw();
-}
 
-function getRandomInt(min, max) {
+function getRandomInt(min: number, max: number): number {
   min = Math.ceil(min);
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function loadEdgesFromStorage(savedEdges, edgeLayer, CELL_SIZE) {
+export function loadEdgesFromStorage(savedEdges: [string, EdgeData][], edgeLayer: Konva.Layer, CELL_SIZE: number): void {
   console.log("Loading edges:", savedEdges);
   edges.clear();
   edgeLayer.destroyChildren();
@@ -148,7 +157,7 @@ function loadEdgesFromStorage(savedEdges, edgeLayer, CELL_SIZE) {
     const [startX, startY, endX, endY] = key
       .split("-")
       .flatMap((coord) => coord.split(",").map(Number));
-    let edge;
+    let edge: Konva.Group;
 
     if (value.type === "door") {
       edge = generateDoor(startX, startY, endX, endY, CELL_SIZE);
@@ -159,9 +168,11 @@ function loadEdgesFromStorage(savedEdges, edgeLayer, CELL_SIZE) {
         endX,
         endY,
         CELL_SIZE,
-        value.roughLineType,
-        value.color,
+        value.roughLineType || 'standard',
+        value.color || ColorEnum.BLACK,
       );
+    } else {
+      return;  // Handle unexpected case
     }
 
     if (edge) {
@@ -174,7 +185,7 @@ function loadEdgesFromStorage(savedEdges, edgeLayer, CELL_SIZE) {
   edgeLayer.batchDraw();
 }
 
-const generateDoor = (startX, startY, endX, endY, CELL_SIZE) => {
+const generateDoor = (startX: number, startY: number, endX: number, endY: number, CELL_SIZE: number): Konva.Group => {
   const edge = new Konva.Group();
 
   const doorLine = new Konva.Line({
@@ -218,17 +229,17 @@ const generateDoor = (startX, startY, endX, endY, CELL_SIZE) => {
 };
 
 function generateRoughLine(
-  startX,
-  startY,
-  endX,
-  endY,
-  CELL_SIZE,
-  roughLineType,
-  color,
-) {
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  CELL_SIZE: number,
+  roughLineType: string,
+  color: ColorEnum
+): Konva.Group {
   const edge = new Konva.Group();
 
-  let lineObjects;
+  let lineObjects: Konva.Shape[];
   switch (roughLineType) {
     case "normal":
       lineObjects = getNormalLine(startX, startY, endX, endY, color);
@@ -246,7 +257,7 @@ function generateRoughLine(
   return edge;
 }
 
-function getNormalLine(startX, startY, endX, endY, color) {
+function getNormalLine(startX: number, startY: number, endX: number, endY: number, color: ColorEnum): Konva.Line[] {
   const normalLine = new Konva.Line({
     points: [startX, startY, endX, endY],
     stroke: ColorMap[color],
@@ -257,8 +268,8 @@ function getNormalLine(startX, startY, endX, endY, color) {
   return [normalLine];
 }
 
-function getBlockLine(startX, startY, endX, endY, CELL_SIZE, color) {
-  const objects = [];
+function getBlockLine(startX: number, startY: number, endX: number, endY: number, CELL_SIZE: number, color: ColorEnum): Konva.Shape[] {
+  const objects: Konva.Shape[] = [];
   const dx = endX - startX;
   const dy = endY - startY;
   const angle = Math.atan2(dy, dx);
@@ -300,8 +311,8 @@ function getBlockLine(startX, startY, endX, endY, CELL_SIZE, color) {
   return objects;
 }
 
-function getRoughLine(startX, startY, endX, endY, color) {
-  const objects = [];
+function getRoughLine(startX: number, startY: number, endX: number, endY: number, color: ColorEnum): Konva.Line[] {
+  const objects: Konva.Line[] = [];
   for (let i = 0; i < 3; i++) {
     const offset = Math.random() * 2 - 1;
     const roughSegment = new Konva.Line({
@@ -316,11 +327,5 @@ function getRoughLine(startX, startY, endX, endY, color) {
   }
   return objects;
 }
-export {
-  initializeEdgePreview,
-  updateEdgePreview,
-  placeEdge,
-  clearEdges,
-  edges,
-  loadEdgesFromStorage,
-};
+
+export { edges };

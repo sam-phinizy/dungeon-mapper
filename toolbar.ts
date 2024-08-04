@@ -1,12 +1,32 @@
-import { ColorEnum, ColorMap, getColorEnum, getColorName } from "./colors.js";
+import { ColorEnum, ColorMap } from "./colors";
 
-let currentColor = ColorEnum.WHITE; // Default color
-let currentRoughLineType = "standard"; // Default rough line type
+let currentColor: ColorEnum = ColorEnum.WHITE; // Default color
+let currentRoughLineType: string = "standard"; // Default rough line type
 
-function initializeToolbar() {
+interface Tool {
+  id: string;
+  icon: string;
+  title: string;
+}
+
+declare global {
+  interface Window {
+    state: {
+      currentTool: string;
+      debugMode: boolean;
+    };
+    stage: any; // You might want to replace 'any' with the proper Konva.Stage type
+    clearGrid: (cellLayer: any) => void; // Replace 'any' with the proper Konva.Layer type
+    edges: Map<string, any>; // Replace 'any' with the proper edge data type
+    saveToLocalStorage: () => void;
+  }
+}
+
+export function initializeToolbar(): void {
   const toolbar = document.getElementById("floating-tools");
+  if (!toolbar) return;
 
-  const tools = [
+  const tools: Tool[] = [
     { id: "penTool", icon: "fi-rr-pencil", title: "Pen Tool" },
     { id: "rectTool", icon: "fi-rr-square", title: "Rectangle Tool" },
     { id: "circleTool", icon: "fi-rr-circle", title: "Circle Tool" },
@@ -47,7 +67,7 @@ function initializeToolbar() {
   initializeRoughLineDropdown();
 }
 
-function initializeColorPicker() {
+function initializeColorPicker(): void {
   const colorPicker = document.createElement("div");
   colorPicker.id = "color-picker";
 
@@ -62,20 +82,27 @@ function initializeColorPicker() {
     colorPicker.appendChild(colorButton);
   });
 
-  document.getElementById("floating-tools").appendChild(colorPicker);
+  const floatingTools = document.getElementById("floating-tools");
+  if (floatingTools) {
+    floatingTools.appendChild(colorPicker);
+  }
 
   // Set initial color to white
   setColor(ColorEnum.WHITE);
 }
 
-function toggleColorPicker() {
+function toggleColorPicker(): void {
   const colorPicker = document.getElementById("color-picker");
-  colorPicker.style.display =
-    colorPicker.style.display === "none" ? "block" : "none";
+  if (colorPicker) {
+    colorPicker.style.display =
+      colorPicker.style.display === "none" ? "block" : "none";
+  }
 }
 
-function initializeRoughLineDropdown() {
+function initializeRoughLineDropdown(): void {
   const roughLineToolButton = document.getElementById("roughLineTool");
+  if (!roughLineToolButton) return;
+
   const dropdownContent = document.createElement("div");
   dropdownContent.className = "dropdown-content";
   dropdownContent.style.display = "none";
@@ -110,76 +137,76 @@ function initializeRoughLineDropdown() {
   });
 }
 
-function setTool(tool) {
+export function setTool(tool: string): void {
   window.state.currentTool = tool;
-  document
-    .getElementById("penTool")
-    .classList.toggle("active-tool", tool === "pen");
-  document
-    .getElementById("rectTool")
-    .classList.toggle("active-tool", tool === "rect");
-  document
-    .getElementById("circleTool")
-    .classList.toggle("active-tool", tool === "circle");
-  document
-    .getElementById("lineTool")
-    .classList.toggle("active-tool", tool === "line");
-  document
-    .getElementById("selectTool")
-    .classList.toggle("active-tool", tool === "select");
-  document
-    .getElementById("doorTool")
-    .classList.toggle("active-tool", tool === "door");
-  document
-    .getElementById("notesTool")
-    .classList.toggle("active-tool", tool === "notes");
-  document
-    .getElementById("roughLineTool")
-    .classList.toggle("active-tool", tool === "roughLine");
+  const tools = [
+    "pen",
+    "rect",
+    "circle",
+    "line",
+    "select",
+    "door",
+    "notes",
+    "roughLine",
+  ];
+  tools.forEach((t) => {
+    const element = document.getElementById(`${t}Tool`);
+    if (element) {
+      element.classList.toggle("active-tool", t === tool);
+    }
+  });
 }
 
-function setColor(colorEnum) {
+function setColor(colorEnum: ColorEnum): void {
   currentColor = colorEnum;
   const colorButton = document.getElementById("colorTool");
-  colorButton.style.backgroundColor = ColorMap[colorEnum];
-  colorButton.style.borderColor = ColorMap[colorEnum];
+  if (colorButton) {
+    colorButton.style.backgroundColor = ColorMap[colorEnum];
+    colorButton.style.borderColor = ColorMap[colorEnum];
+  }
 }
 
-function getCurrentColor() {
+export function getCurrentColor(): ColorEnum {
   return currentColor;
 }
 
-function setRoughLineType(type) {
+function setRoughLineType(type: string): void {
   currentRoughLineType = type;
   console.log(`Rough line type set to: ${type}`);
   // For now, all options do the same thing
   setTool("roughLine");
 }
 
-function toggleDebugMode() {
+function toggleDebugMode(): void {
   window.state.debugMode = !window.state.debugMode;
-  document
-    .getElementById("debugTool")
-    .classList.toggle("active-tool", window.state.debugMode);
+  const debugTool = document.getElementById("debugTool");
+  if (debugTool) {
+    debugTool.classList.toggle("active-tool", window.state.debugMode);
+  }
 }
 
-function initializeDebugTool() {
+export function initializeDebugTool(): void {
   const debugTool = document.createElement("button");
   debugTool.id = "debugTool";
   debugTool.className = "btn btn-outline-secondary mb-2";
   debugTool.innerHTML = "🐞"; // Bug emoji as the icon
   debugTool.title = "Toggle Debug Mode";
   debugTool.addEventListener("click", toggleDebugMode);
-  document.getElementById("floating-tools").appendChild(debugTool);
+  const floatingTools = document.getElementById("floating-tools");
+  if (floatingTools) {
+    floatingTools.appendChild(debugTool);
+  }
 }
 
-function getCurrentRoughLineType() {
+export function getCurrentRoughLineType(): string {
   return currentRoughLineType;
 }
 
-function downloadCanvas() {
+function downloadCanvas(): void {
   const tempCanvas = document.createElement("canvas");
   const tempContext = tempCanvas.getContext("2d");
+  if (!tempContext) return;
+
   tempCanvas.width = window.stage.width();
   tempCanvas.height = window.stage.height();
 
@@ -204,7 +231,7 @@ function downloadCanvas() {
   document.body.removeChild(link);
 }
 
-function clearMap() {
+function clearMap(): void {
   if (confirm("Are you sure you want to clear the entire map?")) {
     window.clearGrid(window.cellLayer);
     window.edges.clear();
@@ -213,13 +240,3 @@ function clearMap() {
     window.saveToLocalStorage();
   }
 }
-
-export {
-  initializeToolbar,
-  setTool,
-  setColor,
-  getCurrentColor,
-  getCurrentRoughLineType,
-  initializeDebugTool,
-  clearMap,
-};
