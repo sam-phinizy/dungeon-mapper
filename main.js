@@ -561,7 +561,7 @@ function addToLibrary() {
   const maxCol = Math.max(...selectedCells.map((cell) => cell.col));
   const maxRow = Math.max(...selectedCells.map((cell) => cell.row));
 
-  const selectedEdges = Array.from(edges).filter(([key, edge]) => {
+  const selectedEdgesAndDoors = Array.from(edges).filter(([key, edge]) => {
     const [startX, startY, endX, endY] = key.split(",").map(Number);
     return (
       Math.min(startX, endX) >= minCol * CELL_SIZE &&
@@ -573,7 +573,7 @@ function addToLibrary() {
 
   const libraryItem = {
     cells: selectedCells,
-    edges: selectedEdges.map(([key, edge]) => {
+    edgesAndDoors: selectedEdgesAndDoors.map(([key, edge]) => {
       const [startX, startY, endX, endY] = key.split(",").map(Number);
       return {
         ...edge,
@@ -631,21 +631,32 @@ function renderLibraryItem(item) {
     itemLayer.add(rect);
   });
 
-  if (item.edges && Array.isArray(item.edges)) {
-    item.edges.forEach((edge) => {
-      const line = new Konva.Line({
-        points: [
-          (edge.startX * 10) / CELL_SIZE,
-          (edge.startY * 10) / CELL_SIZE,
-          (edge.endX * 10) / CELL_SIZE,
-          (edge.endY * 10) / CELL_SIZE,
-        ],
-        stroke: edge.color,
-        strokeWidth: (edge.strokeWidth * 10) / CELL_SIZE,
-        lineCap: "round",
-        lineJoin: "round",
-      });
-      itemLayer.add(line);
+  if (item.edgesAndDoors && Array.isArray(item.edgesAndDoors)) {
+    item.edgesAndDoors.forEach((edgeOrDoor) => {
+      if (edgeOrDoor.type === 'door') {
+        const door = generateDoor(
+          (edgeOrDoor.startX * 10) / CELL_SIZE,
+          (edgeOrDoor.startY * 10) / CELL_SIZE,
+          (edgeOrDoor.endX * 10) / CELL_SIZE,
+          (edgeOrDoor.endY * 10) / CELL_SIZE,
+          10
+        );
+        itemLayer.add(door);
+      } else {
+        const line = new Konva.Line({
+          points: [
+            (edgeOrDoor.startX * 10) / CELL_SIZE,
+            (edgeOrDoor.startY * 10) / CELL_SIZE,
+            (edgeOrDoor.endX * 10) / CELL_SIZE,
+            (edgeOrDoor.endY * 10) / CELL_SIZE,
+          ],
+          stroke: edgeOrDoor.color,
+          strokeWidth: (edgeOrDoor.strokeWidth * 10) / CELL_SIZE,
+          lineCap: "round",
+          lineJoin: "round",
+        });
+        itemLayer.add(line);
+      }
     });
   }
 
@@ -673,16 +684,27 @@ function startLibraryItemPreview(item) {
     previewGroup.add(rect);
   });
 
-  if (item.edges && Array.isArray(item.edges)) {
-    item.edges.forEach((edge) => {
-      const line = new Konva.Line({
-        points: [edge.startX, edge.startY, edge.endX, edge.endY],
-        stroke: edge.color,
-        strokeWidth: edge.strokeWidth,
-        lineCap: "round",
-        lineJoin: "round",
-      });
-      previewGroup.add(line);
+  if (item.edgesAndDoors && Array.isArray(item.edgesAndDoors)) {
+    item.edgesAndDoors.forEach((edgeOrDoor) => {
+      if (edgeOrDoor.type === 'door') {
+        const door = generateDoor(
+          edgeOrDoor.startX,
+          edgeOrDoor.startY,
+          edgeOrDoor.endX,
+          edgeOrDoor.endY,
+          CELL_SIZE
+        );
+        previewGroup.add(door);
+      } else {
+        const line = new Konva.Line({
+          points: [edgeOrDoor.startX, edgeOrDoor.startY, edgeOrDoor.endX, edgeOrDoor.endY],
+          stroke: edgeOrDoor.color,
+          strokeWidth: edgeOrDoor.strokeWidth,
+          lineCap: "round",
+          lineJoin: "round",
+        });
+        previewGroup.add(line);
+      }
     });
   }
 
@@ -714,16 +736,16 @@ function startLibraryItemPreview(item) {
       );
     });
 
-    if (item.edges && Array.isArray(item.edges)) {
-      item.edges.forEach((edge) => {
-        const newEdge = {
-          ...edge,
-          startX: edge.startX + offsetX * CELL_SIZE,
-          startY: edge.startY + offsetY * CELL_SIZE,
-          endX: edge.endX + offsetX * CELL_SIZE,
-          endY: edge.endY + offsetY * CELL_SIZE,
+    if (item.edgesAndDoors && Array.isArray(item.edgesAndDoors)) {
+      item.edgesAndDoors.forEach((edgeOrDoor) => {
+        const newEdgeOrDoor = {
+          ...edgeOrDoor,
+          startX: edgeOrDoor.startX + offsetX * CELL_SIZE,
+          startY: edgeOrDoor.startY + offsetY * CELL_SIZE,
+          endX: edgeOrDoor.endX + offsetX * CELL_SIZE,
+          endY: edgeOrDoor.endY + offsetY * CELL_SIZE,
         };
-        placeEdge(edgeLayer, CELL_SIZE, newEdge);
+        placeEdge(edgeLayer, CELL_SIZE, newEdgeOrDoor);
       });
     }
 
