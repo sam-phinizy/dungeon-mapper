@@ -125,22 +125,22 @@ const initializeStage = () => {
   });
 
   const container = stage.container();
-  container.addEventListener('dragover', (e) => {
+  container.addEventListener("dragover", (e) => {
     e.preventDefault();
   });
 
-  container.addEventListener('drop', handleDrop);
+  container.addEventListener("drop", handleDrop);
 };
 
 function handleDrop(e) {
   e.preventDefault();
-  const item = JSON.parse(e.dataTransfer.getData('text/plain'));
+  const item = JSON.parse(e.dataTransfer.getData("text/plain"));
   const pos = stage.getPointerPosition();
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  
-  const minCol = Math.min(...item.cells.map(c => c.col));
-  const minRow = Math.min(...item.cells.map(c => c.row));
-  
+
+  const minCol = Math.min(...item.cells.map((c) => c.col));
+  const minRow = Math.min(...item.cells.map((c) => c.row));
+
   item.cells.forEach((cell) => {
     const x = Math.floor(snappedPos.x / CELL_SIZE) + (cell.col - minCol);
     const y = Math.floor(snappedPos.y / CELL_SIZE) + (cell.row - minRow);
@@ -524,8 +524,8 @@ function renderLibraryItem(item) {
   itemLayer.draw();
   libraryContent.appendChild(itemElement);
 
-  itemElement.addEventListener('dragstart', (e) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify(item));
+  itemElement.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setData("text/plain", JSON.stringify(item));
   });
 }
 
