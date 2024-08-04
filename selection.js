@@ -73,9 +73,8 @@ function getSelectedCells(dungeonMapperGrid, CELL_SIZE) {
   for (let row = startRow; row <= endRow; row++) {
     for (let col = startCol; col <= endCol; col++) {
       const key = `${col},${row}`;
-      if (dungeonMapperGrid.has(key)) {
-        selectedCells.push({ row, col, state: dungeonMapperGrid.get(key) });
-      }
+      const state = dungeonMapperGrid.get(key);
+      selectedCells.push({ row, col, state: state !== undefined ? state : null });
     }
   }
   console.log(selectedCells);
