@@ -22,13 +22,15 @@ import {
 } from "./preview";
 import { makeDraggable } from "./draggable";
 import {
-  edges,
+  type EdgeData,
   initializeEdgePreview,
+  loadEdgesFromStorage,
   placeEdge,
   updateEdgePreview,
 } from "./edges";
 import { ColorEnum } from "./colors";
-import { ToolType } from "./toolTypes";
+import { ToolType } from "./tooltypes.ts";
+import { dataEvents, emitDataDirtied } from "./events.ts";
 
 const CELL_SIZE = 32;
 const PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
@@ -49,6 +51,7 @@ interface State {
   startPos: { x: number; y: number } | null;
   debugMode: boolean;
   dungeonMapperGrid: DungeonMapGrid;
+  edges: Map<string, EdgeData>;
 }
 
 const state: State = {
@@ -57,9 +60,54 @@ const state: State = {
   startPos: null,
   debugMode: false,
   dungeonMapperGrid: new Map<string, ColorEnum>(),
+  edges: new Map<string, EdgeData>(),
 };
 
 (window as any).saveToLocalStorage = saveToLocalStorage;
+(window as any).debouncedSave = debouncedSave;
+
+let saveIndicator: Konva.Circle;
+let savePopover: Konva.Text;
+
+const initializeSaveIndicator = () => {
+  saveIndicator = new Konva.Circle({
+    x: stage.width() - 20,
+    y: 20,
+    radius: 10,
+    fill: "green",
+  });
+
+  savePopover = new Konva.Text({
+    x: stage.width() - 80,
+    y: 35,
+    text: "Saved",
+    fontSize: 14,
+    fontFamily: "Arial",
+    fill: "black",
+    padding: 5,
+    backgroundColor: "white",
+    visible: false,
+  });
+
+  saveIndicator.on("mouseover", () => {
+    savePopover.visible(true);
+    interactionLayer.batchDraw();
+  });
+
+  saveIndicator.on("mouseout", () => {
+    savePopover.visible(false);
+    interactionLayer.batchDraw();
+  });
+
+  interactionLayer.add(saveIndicator);
+  interactionLayer.add(savePopover);
+};
+
+const updateSaveIndicator = (isDirty: boolean) => {
+  saveIndicator.fill(isDirty ? "red" : "green");
+  savePopover.text(isDirty ? "Not Saved" : "Saved");
+  interactionLayer.batchDraw();
+};
 
 const init = (): void => {
   initializeStage();
@@ -70,11 +118,25 @@ const init = (): void => {
   initializePreview(interactionLayer);
   initializeDebugTool();
 
-  loadFromLocalStorage();
+  const { gridData, edges: savedEdges } = loadFromLocalStorage();
+  state.dungeonMapperGrid = gridData;
+  loadEdgesFromStorage(state.edges, savedEdges, edgeLayer, CELL_SIZE);
 
   stage.on("mousedown touchstart", handleStageMouseDown);
   stage.on("mousemove touchmove", handleStageMouseMove);
   stage.on("mouseup touchend", handleStageMouseUp);
+
+  initializeSaveIndicator();
+
+  dataEvents.on("dataSaved", (dungeonGrid) => {
+    console.log("Data saved:", dungeonGrid);
+    updateSaveIndicator(false);
+  });
+
+  dataEvents.on("dataDirtied", (dungeonGrid) => {
+    console.log("Data dirtied:", dungeonGrid);
+    updateSaveIndicator(true);
+  });
 
   renderGrid(state.dungeonMapperGrid, cellLayer, CELL_SIZE);
   cellLayer.batchDraw();
@@ -90,7 +152,6 @@ const init = (): void => {
   initializeDOMElements();
 
   (window as any).clearGrid = clearMap;
-  (window as any).edges = edges;
 };
 const initializeStage = (): void => {
   stage = new Konva.Stage({
@@ -158,7 +219,7 @@ function calculateAvailableWidth(): number {
 }
 
 const handleStageMouseDown = (
-  e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  _: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
 ): void => {
   const pos = stage.getPointerPosition();
   if (!pos) return;
@@ -167,8 +228,7 @@ const handleStageMouseDown = (
   switch (state.currentTool) {
     case ToolType.DOOR:
     case ToolType.ROUGH_LINE:
-      placeEdge(edgeLayer, CELL_SIZE, state);
-      debouncedSave(state.dungeonMapperGrid);
+      placeEdge(edgeLayer, state.edges, CELL_SIZE, state);
       break;
     case ToolType.SELECT:
       startSelection(snappedPos, interactionLayer, CELL_SIZE);
@@ -184,7 +244,6 @@ const handleStageMouseDown = (
         getCurrentColor(),
         state.dungeonMapperGrid,
       );
-      debouncedSave(state.dungeonMapperGrid);
       break;
     case ToolType.RECT:
     case ToolType.CIRCLE:
@@ -200,10 +259,12 @@ const handleStageMouseDown = (
       );
       break;
   }
+  emitDataDirtied();
+  debouncedSave(state.dungeonMapperGrid, state.edges);
 };
 
 function handleStageMouseMove(
-  e: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  _: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
 ): void {
   const pos = stage.getPointerPosition();
   if (!pos) return;
@@ -387,7 +448,7 @@ function drawShape(
       }
     }
   }
-
+  emitDataDirtied();
   cellLayer.batchDraw();
 }
 
@@ -450,10 +511,12 @@ function handleResize(): void {
 
   gridLayer.draw();
 
+  saveIndicator.x(stage.width() - 20);
+  savePopover.x(stage.width() - 80);
   stage.batchDraw();
 }
 
-function handleColorSchemeChange(e: MediaQueryListEvent): void {
+function handleColorSchemeChange(_: MediaQueryListEvent): void {
   stage.batchDraw();
 }
 
@@ -467,9 +530,9 @@ function displayLoadedChatMessages(): void {
 
 function clearMap(): void {
   state.dungeonMapperGrid.clear();
+  state.edges.clear();
   cellLayer.destroyChildren();
   cellLayer.draw();
-  edges.clear();
   edgeLayer.destroyChildren();
   edgeLayer.draw();
   saveToLocalStorage(state.dungeonMapperGrid);
@@ -488,7 +551,7 @@ function initializeDOMElements(): void {
         chatMessages.push(message);
         displayLoadedChatMessages();
         chatInput.value = "";
-        saveToLocalStorage(state.dungeonMapperGrid);
+        debouncedSave(state.dungeonMapperGrid, undefined);
       }
     });
 

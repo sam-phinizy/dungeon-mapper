@@ -1,8 +1,8 @@
 import Konva from "konva";
 import { snapToGrid } from "./utils";
 import { getCurrentColor, getCurrentRoughLineType } from "./toolbar";
-import { ColorMap, ColorEnum } from "./colors";
-import { ToolType } from "./toolTypes";
+import { ColorEnum, ColorMap } from "./colors";
+import { ToolType } from "./tooltypes";
 
 const DOOR_COLOR = "black";
 const DOOR_FILL_COLOR = "#FFFFFF";
@@ -10,7 +10,6 @@ const EDGE_PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
 
 let edgePreview: Konva.Group;
 let previewLayer: Konva.Layer;
-let edges = new Map<string, EdgeData>();
 
 export interface EdgeData {
   type: "door" | "roughLine";
@@ -62,8 +61,6 @@ export function updateEdgePreview(
   ensureValidEdgePreview();
 
   const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  const cellX = Math.floor(snappedPos.x / CELL_SIZE);
-  const cellY = Math.floor(snappedPos.y / CELL_SIZE);
 
   const xOffset = pos.x - snappedPos.x;
   const yOffset = pos.y - snappedPos.y;
@@ -98,9 +95,10 @@ export function updateEdgePreview(
 
 export function placeEdge(
   edgeLayer: Konva.Layer,
+  edges: Map<string, EdgeData>,
   CELL_SIZE: number,
   state: State,
-): void {
+): Map<string, EdgeData> | undefined {
   if (!edgePreview.visible()) return;
 
   const line = edgePreview.findOne("Line") as Konva.Line;
@@ -147,10 +145,7 @@ export function placeEdge(
   edgeLayer.add(edge);
   edges.set(edgeKey, edgeData);
   edgeLayer.batchDraw();
-
-  if (typeof (window as any).saveToLocalStorage === "function") {
-    (window as any).saveToLocalStorage();
-  }
+  return edges;
 }
 
 function getRandomInt(min: number, max: number): number {
@@ -160,6 +155,7 @@ function getRandomInt(min: number, max: number): number {
 }
 
 export function loadEdgesFromStorage(
+  edges: Map<string, EdgeData>,
   savedEdges: [string, EdgeData][],
   edgeLayer: Konva.Layer,
   CELL_SIZE: number,
@@ -368,5 +364,3 @@ function getRoughLine(
   }
   return objects;
 }
-
-export { edges };

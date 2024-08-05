@@ -1,6 +1,7 @@
 import { ColorEnum } from "./colors.ts";
 import { type EdgeData, edges } from "./edges.ts";
 import { type DungeonMapGrid } from "./index.ts";
+import { emitDataSaved, emitDataDirtied } from "./events.ts";
 
 export function snapToGrid(
   x: number,
@@ -28,30 +29,53 @@ function debounce<F extends (...args: any[]) => void>(
   };
 }
 
-export const debouncedSave = debounce((dungeonGrid: DungeonMapGrid) => {
-  saveToLocalStorage(dungeonGrid);
-}, 1000);
+interface SaveToLocalStorageParams {
+  dungeonGrid?: DungeonMapGrid;
+  edges?: Map<string, EdgeData>;
+}
+export const debouncedSave = debounce(
+  (dungeonGrid?: DungeonMapGrid, edges?: Map<string, EdgeData>) => {
+    saveToLocalStorage(dungeonGrid, edges);
+  },
+  500,
+);
 
-export function saveToLocalStorage(dungeonGrid: DungeonMapGrid): void {
-  const gridData: Record<string, ColorEnum> = {};
-  for (const [key, colorEnum] of dungeonGrid) {
-    gridData[key] = colorEnum;
+export function saveToLocalStorage(
+  dungeonGrid?: DungeonMapGrid,
+  edges?: Map<string, EdgeData>,
+): void {
+  if (dungeonGrid) {
+    const gridData: Record<string, ColorEnum> = {};
+    for (const [key, colorEnum] of dungeonGrid) {
+      gridData[key] = colorEnum;
+    }
+    localStorage.setItem("dungeonMapperGrid", JSON.stringify(gridData));
+    emitDataSaved(dungeonGrid);
   }
-  localStorage.setItem("dungeonMapperGrid", JSON.stringify(gridData));
-  localStorage.setItem("dungeonMapperEdges", JSON.stringify(Array.from(edges)));
+
+  if (edges) {
+    localStorage.setItem(
+      "dungeonMapperEdges",
+      JSON.stringify(Array.from(edges)),
+    );
+  }
 }
 
 export function loadFromLocalStorage(): {
-  gridData: Map<string, ColorEnum>;
+  gridData: DungeonMapGrid;
   edges: [string, EdgeData][];
 } {
   const gridData = new Map<string, ColorEnum>();
-  const savedGrid = JSON.parse(
-    localStorage.getItem("dungeonMapperGrid") || "{}",
-  );
-  Object.entries(savedGrid).forEach(([key, value]) => {
-    gridData.set(key, value as ColorEnum);
-  });
+
+  // if gridData is null skip saving it
+  if (gridData !== null) {
+    const savedGrid = JSON.parse(
+      localStorage.getItem("dungeonMapperGrid") || "{}",
+    );
+    Object.entries(savedGrid).forEach(([key, value]) => {
+      gridData.set(key, value as ColorEnum);
+    });
+  }
 
   const edges = JSON.parse(localStorage.getItem("dungeonMapperEdges") || "[]");
 

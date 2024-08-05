@@ -1,6 +1,6 @@
 import type Konva from "konva";
 import { ColorEnum, ColorMap } from "./colors";
-import { ToolType } from "./toolTypes";
+import { ToolType } from "./tooltypes";
 
 let currentColor: ColorEnum = ColorEnum.WHITE; // Default color
 let currentRoughLineType: string = "standard"; // Default rough line type
