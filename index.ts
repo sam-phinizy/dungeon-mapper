@@ -39,7 +39,6 @@ let stage: Konva.Stage;
 let cellLayer: Konva.Layer;
 let edgeLayer: Konva.Layer;
 let interactionLayer: Konva.Layer;
-let debugLayer: Konva.Layer;
 let debugText: Konva.Text;
 let chatMessages: string[] = [];
 export type DungeonMapGrid = Map<string, ColorEnum>;
@@ -162,9 +161,8 @@ const initializeStage = (): void => {
   cellLayer = new Konva.Layer();
   edgeLayer = new Konva.Layer();
   interactionLayer = new Konva.Layer();
-  debugLayer = new Konva.Layer();
 
-  stage.add(cellLayer, edgeLayer, interactionLayer, debugLayer);
+  stage.add(cellLayer, edgeLayer, interactionLayer);
 
   debugText = new Konva.Text({
     x: 10,
@@ -175,14 +173,13 @@ const initializeStage = (): void => {
     fill: "red",
     visible: false,
   });
-  debugLayer.add(debugText);
+  interactionLayer.add(debugText);
 
   Object.assign(window, {
     stage,
     cellLayer,
     edgeLayer,
     interactionLayer,
-    debugLayer,
     debugText,
     CELL_SIZE,
     state,
@@ -202,7 +199,7 @@ const initializeStage = (): void => {
     fill: "red",
     visible: false,
   });
-  debugLayer.add(debugText);
+  interactionLayer.add(debugText);
 };
 
 function calculateAvailableWidth(): number {
@@ -316,11 +313,10 @@ function handleStageMouseMove(
       y: pos.y + 10,
     });
     debugText.visible(true);
-    debugLayer.batchDraw();
   } else {
     debugText.visible(false);
-    debugLayer.batchDraw();
   }
+  interactionLayer.batchDraw();
 }
 
 function handleStageMouseUp(): void {
@@ -524,8 +520,6 @@ function handleResize(): void {
     window.innerHeight - 56 - (libraryContainer?.offsetHeight || 0);
   stage.width(newWidth);
   stage.height(newHeight);
-  gridLayer.width(newWidth);
-  gridLayer.height(newHeight);
   cellLayer.width(newWidth);
   cellLayer.height(newHeight);
   edgeLayer.width(newWidth);

@@ -89,7 +89,7 @@ function initializeColorPicker(): void {
   }
 
   // Set initial color to white
-  setColor(ColorEnum.WHITE);
+  setColor(ColorEnum.BLACK);
 }
 
 function toggleColorPicker(): void {
