@@ -1,7 +1,6 @@
 import Konva from "konva";
 import { snapToGrid } from "./utils";
-import { ColorEnum } from "./colors";
-import { ToolType } from "./toolTypes";
+import { ToolType } from "./tooltypes";
 
 let interactionLayer: Konva.Layer;
 

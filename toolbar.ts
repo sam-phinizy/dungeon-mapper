@@ -11,18 +11,6 @@ interface Tool {
   title: string;
 }
 
-declare global {
-  interface Window {
-    state: {
-      currentTool: ToolType;
-      debugMode: boolean;
-    };
-    stage: Konva.Layer; // You might want to replace 'any' with the proper Konva.Stage type
-    clearGrid: (cellLayer: Konva.Layer) => void; // Replace 'any' with the proper Konva.Layer type
-    saveToLocalStorage: () => void;
-  }
-}
-
 export function initializeToolbar(): void {
   const toolbar = document.getElementById("floating-tools");
   if (!toolbar) return;
@@ -34,10 +22,10 @@ export function initializeToolbar(): void {
     { id: ToolType.LINE, icon: "fi-rr-line-width", title: "Line Tool" },
     { id: ToolType.SELECT, icon: "fi-rr-cursor", title: "Select Tool" },
     { id: ToolType.DOOR, icon: "fi-rr-door-open", title: "Door Tool" },
-    { id: ToolType.NOTES, icon: "fi-rr-note", title: "Notes Tool" },
-    { id: ToolType.ROUGH_LINE, icon: "fi-rr-edit", title: "Rough Line Tool" },
-    { id: ToolType.DOWNLOAD, icon: "fi-rr-download", title: "Download Canvas" },
-    { id: ToolType.CLEAR_MAP, icon: "fi-rr-trash", title: "Clear Map" },
+    // { id: ToolType.NOTES, icon: "fi-rr-note", title: "Notes Tool" },
+    // { id: ToolType.ROUGH_LINE, icon: "fi-rr-edit", title: "Rough Line Tool" },
+    // { id: ToolType.DOWNLOAD, icon: "fi-rr-download", title: "Download Canvas" },
+    // { id: ToolType.CLEAR_MAP, icon: "fi-rr-trash", title: "Clear Map" },
   ];
 
   tools.forEach((tool) => {
@@ -47,11 +35,7 @@ export function initializeToolbar(): void {
     button.title = tool.title;
     button.innerHTML = `<i class="fi ${tool.icon}"></i>`;
     button.addEventListener("click", () => {
-      if (tool.id === ToolType.CLEAR_MAP) {
-        window.clearGrid(window.stage);
-      } else {
-        setTool(tool.id);
-      }
+      setTool(tool.id);
     });
     toolbar.appendChild(button);
   });
@@ -88,7 +72,6 @@ function initializeColorPicker(): void {
     floatingTools.appendChild(colorPicker);
   }
 
-  // Set initial color to white
   setColor(ColorEnum.BLACK);
 }
 
@@ -139,7 +122,6 @@ function initializeRoughLineDropdown(): void {
 }
 
 export function setTool(tool: ToolType): void {
-  window.state.currentTool = tool;
   const tools = Object.values(ToolType);
   tools.forEach((t) => {
     const element = document.getElementById(`${t}Tool`);
@@ -191,24 +173,4 @@ export function initializeDebugTool(): void {
 
 export function getCurrentRoughLineType(): string {
   return currentRoughLineType;
-}
-
-function downloadCanvas(): void {
-  const tempCanvas = document.createElement("canvas");
-  const tempContext = tempCanvas.getContext("2d");
-  if (!tempContext) return;
-
-  tempCanvas.width = window.stage.width();
-  tempCanvas.height = window.stage.height();
-
-  tempContext.fillStyle = "#1a1a1a";
-  tempContext.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-  const link = document.createElement("a");
-  link.download = "dungeon_map.png";
-  link.href = tempCanvas.toDataURL("image/png");
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 }

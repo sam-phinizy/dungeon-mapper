@@ -1,7 +1,7 @@
 import { ColorEnum } from "./colors.ts";
-import { type EdgeData, edges } from "./edges.ts";
+import { type EdgeData } from "./edges.ts";
 import { type DungeonMapGrid } from "./index.ts";
-import { emitDataSaved, emitDataDirtied } from "./events.ts";
+import { emitDataSaved } from "./events.ts";
 
 export function snapToGrid(
   x: number,
@@ -33,6 +33,7 @@ interface SaveToLocalStorageParams {
   dungeonGrid?: DungeonMapGrid;
   edges?: Map<string, EdgeData>;
 }
+
 export const debouncedSave = debounce(
   (dungeonGrid?: DungeonMapGrid, edges?: Map<string, EdgeData>) => {
     saveToLocalStorage(dungeonGrid, edges);

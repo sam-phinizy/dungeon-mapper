@@ -1,55 +1,64 @@
+// Section 1: Imports
 import Konva from "konva";
 import {
   debouncedSave,
   loadFromLocalStorage,
   saveToLocalStorage,
-  snapToGrid,
 } from "./utils";
-import { renderGrid, toggleCell } from "./drawing";
-import { endSelection, startSelection, updateSelection } from "./selection";
-import {
-  getCurrentColor,
-  initializeDebugTool,
-  initializeToolbar,
-  setTool,
-} from "./toolbar";
-import { initializeNotes, openNoteEditor, showNotePopover } from "./notes";
-import {
-  clearPreview,
-  initializePreview,
-  shapePreview,
-  updatePenPreview,
-} from "./preview";
+import { renderGrid } from "./drawing";
+import { initializeDebugTool, initializeToolbar } from "./toolbar";
+import { initializeNotes } from "./notes";
+import { initializePreview } from "./preview";
 import { makeDraggable } from "./draggable";
 import {
   type EdgeData,
   initializeEdgePreview,
   loadEdgesFromStorage,
-  placeEdge,
-  updateEdgePreview,
 } from "./edges";
 import { ColorEnum } from "./colors";
 import { ToolType } from "./tooltypes.ts";
 import { dataEvents, emitDataDirtied } from "./events.ts";
+import ToolStateMachine from "./toolStateMachine";
 
-const CELL_SIZE = 32;
-const PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
+// Section 2: Constants and State Definitions
 
 let stage: Konva.Stage;
 let cellLayer: Konva.Layer;
 let edgeLayer: Konva.Layer;
 let interactionLayer: Konva.Layer;
+let debugLayer: Konva.Layer;
 let debugText: Konva.Text;
 let chatMessages: string[] = [];
 export type DungeonMapGrid = Map<string, ColorEnum>;
 
-interface State {
+export interface AppConfig {
+  cellSize: number;
+  previewColor: string;
+}
+
+const appConfig: AppConfig = {
+  cellSize: 32,
+  previewColor: "rgba(0, 255, 0, 0.5)",
+};
+
+interface AppLayers {
+  cellLayer: Konva.Layer;
+  edgeLayer: Konva.Layer;
+  interactionLayer: Konva.Layer;
+  debugLayer: Konva.Layer;
+}
+
+export interface State {
   currentTool: ToolType;
   isDrawing: boolean;
   startPos: { x: number; y: number } | null;
   debugMode: boolean;
   dungeonMapperGrid: DungeonMapGrid;
   edges: Map<string, EdgeData>;
+  config: AppConfig;
+  layers: AppLayers;
+  selectedCells: { col: number; row: number }[];
+  currentColor: ColorEnum;
 }
 
 const state: State = {
@@ -59,13 +68,20 @@ const state: State = {
   debugMode: false,
   dungeonMapperGrid: new Map<string, ColorEnum>(),
   edges: new Map<string, EdgeData>(),
+  config: appConfig,
+  layers: {} as AppLayers,
+  selectedCells: [],
+  currentColor: ColorEnum.BLACK,
 };
+
+let toolStateMachine: ToolStateMachine;
 
 (window as any).saveToLocalStorage = saveToLocalStorage;
 (window as any).debouncedSave = debouncedSave;
 
 let saveIndicator: Konva.Circle;
 let savePopover: Konva.Text;
+// Section 3: Initialization and Setup Functions
 
 const initializeSaveIndicator = () => {
   saveIndicator = new Konva.Circle({
@@ -108,7 +124,7 @@ const updateSaveIndicator = (isDirty: boolean) => {
 };
 
 const init = (): void => {
-  initializeStage();
+  initializeStage(state);
   cellLayer.draw();
   initializeEdgePreview(interactionLayer);
   initializeToolbar();
@@ -116,9 +132,11 @@ const init = (): void => {
   initializePreview(interactionLayer);
   initializeDebugTool();
 
+  toolStateMachine = new ToolStateMachine(stage, state);
+
   const { gridData, edges: savedEdges } = loadFromLocalStorage();
   state.dungeonMapperGrid = gridData;
-  loadEdgesFromStorage(state.edges, savedEdges, edgeLayer, CELL_SIZE);
+  loadEdgesFromStorage(state.edges, savedEdges, edgeLayer, appConfig.cellSize);
 
   stage.on("mousedown touchstart", handleStageMouseDown);
   stage.on("mousemove touchmove", handleStageMouseMove);
@@ -136,7 +154,7 @@ const init = (): void => {
     updateSaveIndicator(true);
   });
 
-  renderGrid(state.dungeonMapperGrid, cellLayer, CELL_SIZE);
+  renderGrid(state.dungeonMapperGrid, cellLayer, appConfig.cellSize);
   cellLayer.batchDraw();
   displayLoadedChatMessages();
 
@@ -146,12 +164,13 @@ const init = (): void => {
     .matchMedia("(prefers-color-scheme: dark)")
     .addListener(handleColorSchemeChange);
 
-  setTool(ToolType.PEN);
+  toolStateMachine.setTool(ToolType.PEN);
   initializeDOMElements();
 
   (window as any).clearGrid = clearMap;
 };
-const initializeStage = (): void => {
+
+const initializeStage = (state: State): void => {
   stage = new Konva.Stage({
     container: "map-area",
     width: calculateAvailableWidth(),
@@ -161,8 +180,16 @@ const initializeStage = (): void => {
   cellLayer = new Konva.Layer();
   edgeLayer = new Konva.Layer();
   interactionLayer = new Konva.Layer();
+  debugLayer = new Konva.Layer();
 
-  stage.add(cellLayer, edgeLayer, interactionLayer);
+  state.layers = {
+    cellLayer: cellLayer,
+    edgeLayer: edgeLayer,
+    interactionLayer: interactionLayer,
+    debugLayer: debugLayer,
+  };
+
+  stage.add(cellLayer, edgeLayer, interactionLayer, debugLayer);
 
   debugText = new Konva.Text({
     x: 10,
@@ -173,15 +200,15 @@ const initializeStage = (): void => {
     fill: "red",
     visible: false,
   });
-  interactionLayer.add(debugText);
+  debugLayer.add(debugText);
 
   Object.assign(window, {
     stage,
     cellLayer,
     edgeLayer,
     interactionLayer,
+    debugLayer,
     debugText,
-    CELL_SIZE,
     state,
   });
 
@@ -199,7 +226,7 @@ const initializeStage = (): void => {
     fill: "red",
     visible: false,
   });
-  interactionLayer.add(debugText);
+  debugLayer.add(debugText);
 };
 
 function calculateAvailableWidth(): number {
@@ -212,176 +239,155 @@ function calculateAvailableWidth(): number {
   );
 }
 
-const handleStageMouseDown = (
-  _: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
-): void => {
-  const pos = stage.getPointerPosition();
-  if (!pos) return;
-  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
+function initializeDOMElements(): void {
+  const chatSendButton = document.getElementById("chat-send");
+  const chatInput = document.getElementById(
+    "chat-input",
+  ) as HTMLTextAreaElement;
 
-  switch (state.currentTool) {
-    case ToolType.DOOR:
-    case ToolType.ROUGH_LINE:
-      placeEdge(edgeLayer, state.edges, CELL_SIZE, state);
-      break;
-    case ToolType.SELECT:
-      startSelection(snappedPos, interactionLayer, CELL_SIZE);
-      break;
-    case ToolType.PEN:
-      state.isDrawing = true;
-      const { x, y } = snappedPos;
-      toggleCell(
-        state.dungeonMapperGrid,
-        Math.floor(x / CELL_SIZE),
-        Math.floor(y / CELL_SIZE),
-        cellLayer,
-        CELL_SIZE,
-        getCurrentColor(),
-      );
-      break;
-    case ToolType.RECT:
-    case ToolType.CIRCLE:
-    case ToolType.LINE:
-      state.isDrawing = true;
-      state.startPos = snappedPos;
-      break;
-    case ToolType.NOTES:
-      const { x: noteX, y: noteY } = snappedPos;
-      openNoteEditor(
-        Math.floor(noteX / CELL_SIZE),
-        Math.floor(noteY / CELL_SIZE),
-      );
-      break;
+  if (chatSendButton && chatInput) {
+    chatSendButton.addEventListener("click", () => {
+      const message = chatInput.value.trim();
+      if (message) {
+        chatMessages.push(message);
+        displayLoadedChatMessages();
+        chatInput.value = "";
+        debouncedSave(state.dungeonMapperGrid, undefined);
+      }
+    });
+
+    chatInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        chatSendButton.click();
+      }
+    });
   }
+
+  makeDraggable(document.getElementById("floating-tools")!);
+}
+
+// Call init to start the application
+init();
+
+// Section 4: Event Handlers and Core Logic
+
+function handleStageMouseDown(
+  event: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+): void {
+  toolStateMachine.handleMouseDown(event);
   emitDataDirtied();
   debouncedSave(state.dungeonMapperGrid, state.edges);
-};
+}
 
 function handleStageMouseMove(
-  _: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
+  event: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
 ): void {
-  const pos = stage.getPointerPosition();
-  if (!pos) return;
-  const snappedPos = snapToGrid(pos.x, pos.y, CELL_SIZE);
-  if (
-    state.currentTool === ToolType.DOOR ||
-    state.currentTool === ToolType.ROUGH_LINE
-  ) {
-    updateEdgePreview(pos, CELL_SIZE, state);
-  } else if (state.currentTool === ToolType.SELECT) {
-    updateSelection(pos, CELL_SIZE);
-  } else if (state.currentTool === ToolType.PEN && state.isDrawing) {
-    const x = Math.floor(snappedPos.x / CELL_SIZE);
-    const y = Math.floor(snappedPos.y / CELL_SIZE);
-    toggleCell(
-      state.dungeonMapperGrid,
-      x,
-      y,
-      cellLayer,
-      CELL_SIZE,
-      getCurrentColor(),
-    );
-    debouncedSave(state.dungeonMapperGrid);
-  } else if (state.currentTool === ToolType.PEN && !state.isDrawing) {
-    updatePenPreview(pos, CELL_SIZE, PREVIEW_COLOR);
-  } else if (
-    (state.currentTool === ToolType.RECT ||
-      state.currentTool === ToolType.CIRCLE ||
-      state.currentTool === ToolType.LINE) &&
-    state.isDrawing &&
-    state.startPos
-  ) {
-    shapePreview(
-      state.startPos,
-      snappedPos,
-      state.currentTool,
-      CELL_SIZE,
-      PREVIEW_COLOR,
-    );
-  } else if (state.currentTool === ToolType.NOTES) {
-    const row = Math.floor(snappedPos.y / CELL_SIZE);
-    const col = Math.floor(snappedPos.x / CELL_SIZE);
-    showNotePopover(row, col, pos);
-  }
+  toolStateMachine.handleMouseMove(event);
 
   if (state.debugMode) {
-    const cellX = Math.floor(pos.x / CELL_SIZE);
-    const cellY = Math.floor(pos.y / CELL_SIZE);
-    debugText.text(`X: ${cellX}, Y: ${cellY}`);
-    debugText.position({
-      x: pos.x + 10,
-      y: pos.y + 10,
-    });
-    debugText.visible(true);
+    const pos = stage.getPointerPosition();
+    if (pos) {
+      const cellX = Math.floor(pos.x / appConfig.cellSize);
+      const cellY = Math.floor(pos.y / appConfig.cellSize);
+      debugText.text(`X: ${cellX}, Y: ${cellY}`);
+      debugText.position({
+        x: pos.x + 10,
+        y: pos.y + 10,
+      });
+      debugText.visible(true);
+      debugLayer.batchDraw();
+    }
   } else {
     debugText.visible(false);
+    debugLayer.batchDraw();
   }
-  interactionLayer.batchDraw();
 }
 
-function handleStageMouseUp(): void {
-  switch (state.currentTool) {
-    case ToolType.SELECT:
-      endSelection();
-      break;
-    case ToolType.PEN:
-    case ToolType.RECT:
-    case ToolType.CIRCLE:
-    case ToolType.LINE:
-      if (state.isDrawing) {
-        if (state.currentTool !== ToolType.PEN) {
-          const endPos = snapToGrid(
-            stage.getPointerPosition()!.x,
-            stage.getPointerPosition()!.y,
-            CELL_SIZE,
-          );
-          drawShape(state.startPos!, endPos, getCurrentColor());
-        }
-        state.isDrawing = false;
-        state.startPos = null;
-        clearPreview();
-        debouncedSave(state.dungeonMapperGrid);
-      }
-      break;
-  }
-}
-function drawShape(
-  startPos: { x: number; y: number },
-  endPos: { x: number; y: number },
-  currentColor: ColorEnum,
+function handleStageMouseUp(
+  event: Konva.KonvaEventObject<MouseEvent | TouchEvent>,
 ): void {
-  const startCol = Math.floor(startPos.x / CELL_SIZE);
-  const startRow = Math.floor(startPos.y / CELL_SIZE);
-  const endCol = Math.floor(endPos.x / CELL_SIZE);
-  const endRow = Math.floor(endPos.y / CELL_SIZE);
+  toolStateMachine.handleMouseUp(event);
+  debouncedSave(state.dungeonMapperGrid);
+}
 
-  let cellsToDraw: { col: number; row: number }[] = [];
-
-  switch (state.currentTool) {
-    case ToolType.RECT:
-      cellsToDraw = drawRect(startCol, startRow, endCol, endRow);
-      break;
-    case ToolType.CIRCLE:
-      cellsToDraw = drawCircle(startCol, startRow, endCol, endRow);
-      break;
-    case ToolType.LINE:
-      cellsToDraw = drawLine(startCol, startRow, endCol, endRow);
-      break;
+function handleKeyboardShortcuts(event: KeyboardEvent): void {
+  if (
+    event.target instanceof HTMLInputElement ||
+    event.target instanceof HTMLTextAreaElement
+  ) {
+    return;
   }
 
-  cellsToDraw.forEach(({ col, row }) => {
-    toggleCell(
-      state.dungeonMapperGrid,
-      col,
-      row,
-      cellLayer,
-      CELL_SIZE,
-      currentColor,
-    );
-  });
+  switch (event.key.toLowerCase()) {
+    case "p":
+      toolStateMachine.setTool(ToolType.PEN);
+      break;
+    case "r":
+      toolStateMachine.setTool(ToolType.RECT);
+      break;
+    case "c":
+      toolStateMachine.setTool(ToolType.CIRCLE);
+      break;
+    case "l":
+      toolStateMachine.setTool(ToolType.LINE);
+      break;
+    case "s":
+      toolStateMachine.setTool(ToolType.SELECT);
+      break;
+    case "d":
+      toolStateMachine.setTool(ToolType.DOOR);
+      break;
+    case "u":
+      toolStateMachine.setTool(ToolType.ROUGH_LINE);
+      break;
+  }
+}
 
-  emitDataDirtied();
-  cellLayer.batchDraw();
+function handleResize(): void {
+  const sidebar = document.getElementById("sidebar");
+  const resizer = document.getElementById("sidebar-resizer");
+  const libraryContainer = document.getElementById("library-container");
+  const newWidth =
+    calculateAvailableWidth() -
+    (sidebar?.offsetWidth || 0) -
+    (resizer?.offsetWidth || 0);
+  const newHeight =
+    window.innerHeight - 56 - (libraryContainer?.offsetHeight || 0);
+  stage.width(newWidth);
+  stage.height(newHeight);
+  cellLayer.width(newWidth);
+  cellLayer.height(newHeight);
+  edgeLayer.width(newWidth);
+  edgeLayer.height(newHeight);
+  interactionLayer.width(newWidth);
+  interactionLayer.height(newHeight);
+
+  saveIndicator.x(stage.width() - 20);
+  savePopover.x(stage.width() - 80);
+  stage.batchDraw();
+}
+
+function handleColorSchemeChange(_: MediaQueryListEvent): void {
+  stage.batchDraw();
+}
+
+function displayLoadedChatMessages(): void {
+  const chatMessagesElement = document.getElementById("chat-messages");
+  if (chatMessagesElement) {
+    chatMessagesElement.innerHTML = chatMessages.join("<br>");
+    chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
+  }
+}
+
+function clearMap(): void {
+  state.dungeonMapperGrid.clear();
+  state.edges.clear();
+  cellLayer.destroyChildren();
+  cellLayer.draw();
+  edgeLayer.destroyChildren();
+  edgeLayer.draw();
+  saveToLocalStorage(state.dungeonMapperGrid);
 }
 
 function drawRect(
@@ -472,114 +478,114 @@ function drawLine(
   }
   return cells;
 }
-function handleKeyboardShortcuts(event: KeyboardEvent): void {
-  if (
-    event.target instanceof HTMLInputElement ||
-    event.target instanceof HTMLTextAreaElement
-  ) {
-    return;
-  }
 
-  switch (event.key.toLowerCase()) {
-    case "p":
-      setTool(ToolType.PEN);
-      break;
-    case "r":
-      setTool(ToolType.RECT);
-      break;
-    case "c":
-      setTool(ToolType.CIRCLE);
-      break;
-    case "l":
-      setTool(ToolType.LINE);
-      break;
-    case "s":
-      setTool(ToolType.SELECT);
-      break;
-    case "d":
-      setTool(ToolType.DOOR);
-      break;
-    case "n":
-      setTool(ToolType.NOTES);
-      break;
-    case "u":
-      setTool(ToolType.ROUGH_LINE);
-      break;
-  }
-}
+// Section 5: Utility Functions and Exports
 
-function handleResize(): void {
-  const sidebar = document.getElementById("sidebar");
-  const resizer = document.getElementById("sidebar-resizer");
-  const libraryContainer = document.getElementById("library-container");
-  const newWidth =
-    calculateAvailableWidth() -
-    (sidebar?.offsetWidth || 0) -
-    (resizer?.offsetWidth || 0);
-  const newHeight =
-    window.innerHeight - 56 - (libraryContainer?.offsetHeight || 0);
-  stage.width(newWidth);
-  stage.height(newHeight);
-  cellLayer.width(newWidth);
-  cellLayer.height(newHeight);
-  edgeLayer.width(newWidth);
-  edgeLayer.height(newHeight);
-  interactionLayer.width(newWidth);
-  interactionLayer.height(newHeight);
-
-  saveIndicator.x(stage.width() - 20);
-  savePopover.x(stage.width() - 80);
-  stage.batchDraw();
-}
-
-function handleColorSchemeChange(_: MediaQueryListEvent): void {
-  stage.batchDraw();
-}
-
-function displayLoadedChatMessages(): void {
-  const chatMessagesElement = document.getElementById("chat-messages");
-  if (chatMessagesElement) {
-    chatMessagesElement.innerHTML = chatMessages.join("<br>");
-    chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
-  }
-}
-
-function clearMap(): void {
-  state.dungeonMapperGrid.clear();
-  state.edges.clear();
-  cellLayer.destroyChildren();
-  cellLayer.draw();
-  edgeLayer.destroyChildren();
-  edgeLayer.draw();
-  saveToLocalStorage(state.dungeonMapperGrid);
-}
-
-function initializeDOMElements(): void {
-  const chatSendButton = document.getElementById("chat-send");
-  const chatInput = document.getElementById(
-    "chat-input",
-  ) as HTMLTextAreaElement;
-
-  if (chatSendButton && chatInput) {
-    chatSendButton.addEventListener("click", () => {
-      const message = chatInput.value.trim();
-      if (message) {
-        chatMessages.push(message);
-        displayLoadedChatMessages();
-        chatInput.value = "";
-        debouncedSave(state.dungeonMapperGrid, undefined);
-      }
-    });
-
-    chatInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        chatSendButton.click();
-      }
-    });
-  }
-
-  makeDraggable(document.getElementById("floating-tools")!);
-}
-
-init();
+// // Export types and interfaces
+// export type { State };
+//
+// // Export constants
+// export { CELL_SIZE, PREVIEW_COLOR };
+//
+// // Export utility functions
+// export function getState(): State {
+//   return state;
+// }
+//
+// export function getStage(): Konva.Stage {
+//   return stage;
+// }
+//
+// export function getCellLayer(): Konva.Layer {
+//   return cellLayer;
+// }
+//
+// export function getEdgeLayer(): Konva.Layer {
+//   return edgeLayer;
+// }
+//
+// export function getInteractionLayer(): Konva.Layer {
+//   return interactionLayer;
+// }
+//
+// export function getDebugLayer(): Konva.Layer {
+//   return debugLayer;
+// }
+//
+// export function getToolStateMachine(): ToolStateMachine {
+//   return toolStateMachine;
+// }
+//
+// export function setCurrentTool(tool: ToolType): void {
+//   toolStateMachine.setTool(tool);
+// }
+//
+// export function toggleDebugMode(): void {
+//   state.debugMode = !state.debugMode;
+//   debugLayer.visible(state.debugMode);
+//   stage.batchDraw();
+// }
+//
+// export function addChatMessage(message: string): void {
+//   chatMessages.push(message);
+//   displayLoadedChatMessages();
+// }
+//
+// export function saveMap(): void {
+//   saveToLocalStorage(state.dungeonMapperGrid, state.edges);
+// }
+//
+// export function loadMap(): void {
+//   const { gridData, edges: savedEdges } = loadFromLocalStorage();
+//   state.dungeonMapperGrid = gridData;
+//   loadEdgesFromStorage(state.edges, savedEdges, edgeLayer, CELL_SIZE);
+//   renderGrid(state.dungeonMapperGrid, cellLayer, CELL_SIZE);
+//   stage.batchDraw();
+// }
+//
+// // Helper function to check if a cell is within the grid bounds
+// export function isWithinBounds(col: number, row: number): boolean {
+//   return (
+//     col >= 0 &&
+//     col < stage.width() / CELL_SIZE &&
+//     row >= 0 &&
+//     row < stage.height() / CELL_SIZE
+//   );
+// }
+//
+// // Helper function to get the cell at a specific position
+// export function getCellAt(x: number, y: number): { col: number; row: number } {
+//   const col = Math.floor(x / CELL_SIZE);
+//   const row = Math.floor(y / CELL_SIZE);
+//   return { col, row };
+// }
+//
+// // Helper function to get the position of a cell
+// export function getCellPosition(
+//   col: number,
+//   row: number,
+// ): { x: number; y: number } {
+//   return {
+//     x: col * CELL_SIZE,
+//     y: row * CELL_SIZE,
+//   };
+// }
+//
+// // Helper function to get neighboring cells
+// export function getNeighbors(
+//   col: number,
+//   row: number,
+// ): { col: number; row: number }[] {
+//   const neighbors = [
+//     { col: col - 1, row: row },
+//     { col: col + 1, row: row },
+//     { col: col, row: row - 1 },
+//     { col: col, row: row + 1 },
+//   ];
+//   return neighbors.filter((neighbor) =>
+//     isWithinBounds(neighbor.col, neighbor.row),
+//   );
+// }
+//
+// // Export the init function to allow external initialization if needed
+// export { init };

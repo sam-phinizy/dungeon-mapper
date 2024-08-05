@@ -19,11 +19,3 @@ export const ColorMap: Record<ColorEnum, string> = {
   [ColorEnum.YELLOW]: "#ffff00",
   [ColorEnum.PURPLE]: "#800080",
 };
-
-export function getColorName(colorEnum: ColorEnum): string | undefined {
-  return ColorEnum[colorEnum];
-}
-
-export function getColorEnum(colorName: string): ColorEnum | undefined {
-  return ColorEnum[colorName.toUpperCase() as keyof typeof ColorEnum];
-}

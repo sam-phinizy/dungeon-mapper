@@ -5,9 +5,9 @@ export enum ToolType {
   LINE = "line",
   SELECT = "select",
   DOOR = "door",
-  NOTES = "notes",
+  // NOTES = "notes",
   ROUGH_LINE = "roughLine",
-  DOWNLOAD = "download",
-  CLEAR_MAP = "clearMap",
+  // DOWNLOAD = "download",
+  // CLEAR_MAP = "clearMap",
   COLOR = "color",
 }
