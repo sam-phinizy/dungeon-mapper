@@ -36,7 +36,6 @@ const CELL_SIZE = 32;
 const PREVIEW_COLOR = "rgba(0, 255, 0, 0.5)";
 
 let stage: Konva.Stage;
-let gridLayer: Konva.Layer;
 let cellLayer: Konva.Layer;
 let edgeLayer: Konva.Layer;
 let interactionLayer: Konva.Layer;
@@ -160,13 +159,12 @@ const initializeStage = (): void => {
     height: window.innerHeight - 206,
   });
 
-  gridLayer = new Konva.Layer();
   cellLayer = new Konva.Layer();
   edgeLayer = new Konva.Layer();
   interactionLayer = new Konva.Layer();
   debugLayer = new Konva.Layer();
 
-  stage.add(gridLayer, cellLayer, edgeLayer, interactionLayer, debugLayer);
+  stage.add(cellLayer, edgeLayer, interactionLayer, debugLayer);
 
   debugText = new Konva.Text({
     x: 10,
@@ -181,7 +179,6 @@ const initializeStage = (): void => {
 
   Object.assign(window, {
     stage,
-    gridLayer,
     cellLayer,
     edgeLayer,
     interactionLayer,
@@ -535,8 +532,6 @@ function handleResize(): void {
   edgeLayer.height(newHeight);
   interactionLayer.width(newWidth);
   interactionLayer.height(newHeight);
-
-  gridLayer.draw();
 
   saveIndicator.x(stage.width() - 20);
   savePopover.x(stage.width() - 80);
