@@ -3,12 +3,12 @@ import { ColorEnum, ColorMap } from "./colors";
 import type { DungeonMapGrid } from "./index.ts";
 
 function toggleCell(
+  dungeonMapperGrid: Map<string, ColorEnum>,
   x: number,
   y: number,
   cellLayer: Konva.Layer,
-  CELL_SIZE: number,
+  cellSize: number,
   currentColor: ColorEnum,
-  dungeonMapperGrid: Map<string, ColorEnum>,
 ): void {
   const key = `${x},${y}`;
   const currentValue = dungeonMapperGrid.get(key);
@@ -24,10 +24,10 @@ function toggleCell(
     cell.fill(ColorMap[currentColor]);
   } else {
     const newCell = new Konva.Rect({
-      x: x * CELL_SIZE,
-      y: y * CELL_SIZE,
-      width: CELL_SIZE,
-      height: CELL_SIZE,
+      x: x * cellSize,
+      y: y * cellSize,
+      width: cellSize,
+      height: cellSize,
       fill: ColorMap[currentColor],
       id: `cell-${x}-${y}`,
     });

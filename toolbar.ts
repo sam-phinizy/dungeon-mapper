@@ -2,7 +2,7 @@ import type Konva from "konva";
 import { ColorEnum, ColorMap } from "./colors";
 import { ToolType } from "./tooltypes";
 
-let currentColor: ColorEnum = ColorEnum.WHITE; // Default color
+let currentColor: ColorEnum = ColorEnum.BLACK; // Default color
 let currentRoughLineType: string = "standard"; // Default rough line type
 
 interface Tool {
@@ -19,7 +19,6 @@ declare global {
     };
     stage: Konva.Layer; // You might want to replace 'any' with the proper Konva.Stage type
     clearGrid: (cellLayer: Konva.Layer) => void; // Replace 'any' with the proper Konva.Layer type
-    edges: Map<string, any>; // Replace 'any' with the proper edge data type
     saveToLocalStorage: () => void;
   }
 }
@@ -49,7 +48,7 @@ export function initializeToolbar(): void {
     button.innerHTML = `<i class="fi ${tool.icon}"></i>`;
     button.addEventListener("click", () => {
       if (tool.id === ToolType.CLEAR_MAP) {
-        clearMap();
+        window.clearGrid(window.stage);
       } else {
         setTool(tool.id);
       }
@@ -166,7 +165,6 @@ export function getCurrentColor(): ColorEnum {
 function setRoughLineType(type: string): void {
   currentRoughLineType = type;
   console.log(`Rough line type set to: ${type}`);
-  // For now, all options do the same thing
   setTool(ToolType.ROUGH_LINE);
 }
 
@@ -206,15 +204,6 @@ function downloadCanvas(): void {
   tempContext.fillStyle = "#1a1a1a";
   tempContext.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-  [
-    window.gridLayer,
-    window.cellLayer,
-    window.doorLayer,
-    window.selectionLayer,
-  ].forEach((layer) => {
-    tempContext.drawImage(layer.canvas._canvas, 0, 0);
-  });
-
   const link = document.createElement("a");
   link.download = "dungeon_map.png";
   link.href = tempCanvas.toDataURL("image/png");
@@ -222,14 +211,4 @@ function downloadCanvas(): void {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-}
-
-function clearMap(): void {
-  if (confirm("Are you sure you want to clear the entire map?")) {
-    window.clearGrid(window.cellLayer);
-    window.edges.clear();
-    window.edgeLayer.destroyChildren();
-    window.edgeLayer.draw();
-    window.saveToLocalStorage();
-  }
 }

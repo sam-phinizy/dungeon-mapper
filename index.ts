@@ -237,12 +237,12 @@ const handleStageMouseDown = (
       state.isDrawing = true;
       const { x, y } = snappedPos;
       toggleCell(
+        state.dungeonMapperGrid,
         Math.floor(x / CELL_SIZE),
         Math.floor(y / CELL_SIZE),
         cellLayer,
         CELL_SIZE,
         getCurrentColor(),
-        state.dungeonMapperGrid,
       );
       break;
     case ToolType.RECT:
@@ -280,12 +280,12 @@ function handleStageMouseMove(
     const x = Math.floor(snappedPos.x / CELL_SIZE);
     const y = Math.floor(snappedPos.y / CELL_SIZE);
     toggleCell(
+      state.dungeonMapperGrid,
       x,
       y,
       cellLayer,
       CELL_SIZE,
       getCurrentColor(),
-      state.dungeonMapperGrid,
     );
     debouncedSave(state.dungeonMapperGrid);
   } else if (state.currentTool === ToolType.PEN && !state.isDrawing) {
@@ -327,31 +327,31 @@ function handleStageMouseMove(
 }
 
 function handleStageMouseUp(): void {
-  if (state.currentTool === ToolType.SELECT) {
-    endSelection();
-  } else if (
-    state.currentTool === ToolType.PEN ||
-    state.currentTool === ToolType.RECT ||
-    state.currentTool === ToolType.CIRCLE ||
-    state.currentTool === ToolType.LINE
-  ) {
-    if (state.isDrawing) {
-      if (state.currentTool !== ToolType.PEN) {
-        const endPos = snapToGrid(
-          stage.getPointerPosition()!.x,
-          stage.getPointerPosition()!.y,
-          CELL_SIZE,
-        );
-        drawShape(state.startPos!, endPos, getCurrentColor());
+  switch (state.currentTool) {
+    case ToolType.SELECT:
+      endSelection();
+      break;
+    case ToolType.PEN:
+    case ToolType.RECT:
+    case ToolType.CIRCLE:
+    case ToolType.LINE:
+      if (state.isDrawing) {
+        if (state.currentTool !== ToolType.PEN) {
+          const endPos = snapToGrid(
+            stage.getPointerPosition()!.x,
+            stage.getPointerPosition()!.y,
+            CELL_SIZE,
+          );
+          drawShape(state.startPos!, endPos, getCurrentColor());
+        }
+        state.isDrawing = false;
+        state.startPos = null;
+        clearPreview();
+        debouncedSave(state.dungeonMapperGrid);
       }
-      state.isDrawing = false;
-      state.startPos = null;
-      clearPreview();
-      debouncedSave(state.dungeonMapperGrid);
-    }
+      break;
   }
 }
-
 function drawShape(
   startPos: { x: number; y: number },
   endPos: { x: number; y: number },
@@ -362,96 +362,123 @@ function drawShape(
   const endCol = Math.floor(endPos.x / CELL_SIZE);
   const endRow = Math.floor(endPos.y / CELL_SIZE);
 
-  if (state.currentTool === ToolType.RECT) {
-    for (
-      let row = Math.min(startRow, endRow);
-      row <= Math.max(startRow, endRow);
-      row++
-    ) {
-      for (
-        let col = Math.min(startCol, endCol);
-        col <= Math.max(startCol, endCol);
-        col++
-      ) {
-        toggleCell(
-          col,
-          row,
-          cellLayer,
-          CELL_SIZE,
-          currentColor,
-          state.dungeonMapperGrid,
-        );
-      }
-    }
-  } else if (state.currentTool === ToolType.CIRCLE) {
-    const centerRow = (startRow + endRow) / 2;
-    const centerCol = (startCol + endCol) / 2;
-    const radius =
-      Math.sqrt(
-        Math.pow(endRow - startRow, 2) + Math.pow(endCol - startCol, 2),
-      ) / 2;
+  let cellsToDraw: { col: number; row: number }[] = [];
 
-    for (
-      let row = Math.floor(centerRow - radius);
-      row <= Math.ceil(centerRow + radius);
-      row++
-    ) {
-      for (
-        let col = Math.floor(centerCol - radius);
-        col <= Math.ceil(centerCol + radius);
-        col++
-      ) {
-        if (
-          Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2) <=
-          Math.pow(radius, 2)
-        ) {
-          toggleCell(
-            col,
-            row,
-            cellLayer,
-            CELL_SIZE,
-            currentColor,
-            state.dungeonMapperGrid,
-          );
-        }
-      }
-    }
-  } else if (state.currentTool === ToolType.LINE) {
-    const dx = Math.abs(endCol - startCol);
-    const dy = Math.abs(endRow - startRow);
-    const sx = startCol < endCol ? 1 : -1;
-    const sy = startRow < endRow ? 1 : -1;
-    let err = dx - dy;
-
-    let row = startRow;
-    let col = startCol;
-
-    while (true) {
-      toggleCell(
-        col,
-        row,
-        cellLayer,
-        CELL_SIZE,
-        currentColor,
-        state.dungeonMapperGrid,
-      );
-
-      if (row === endRow && col === endCol) break;
-      const e2 = 2 * err;
-      if (e2 > -dy) {
-        err -= dy;
-        col += sx;
-      }
-      if (e2 < dx) {
-        err += dx;
-        row += sy;
-      }
-    }
+  switch (state.currentTool) {
+    case ToolType.RECT:
+      cellsToDraw = drawRect(startCol, startRow, endCol, endRow);
+      break;
+    case ToolType.CIRCLE:
+      cellsToDraw = drawCircle(startCol, startRow, endCol, endRow);
+      break;
+    case ToolType.LINE:
+      cellsToDraw = drawLine(startCol, startRow, endCol, endRow);
+      break;
   }
+
+  cellsToDraw.forEach(({ col, row }) => {
+    toggleCell(
+      state.dungeonMapperGrid,
+      col,
+      row,
+      cellLayer,
+      CELL_SIZE,
+      currentColor,
+    );
+  });
+
   emitDataDirtied();
   cellLayer.batchDraw();
 }
 
+function drawRect(
+  startCol: number,
+  startRow: number,
+  endCol: number,
+  endRow: number,
+): { col: number; row: number }[] {
+  const cells: { col: number; row: number }[] = [];
+  for (
+    let row = Math.min(startRow, endRow);
+    row <= Math.max(startRow, endRow);
+    row++
+  ) {
+    for (
+      let col = Math.min(startCol, endCol);
+      col <= Math.max(startCol, endCol);
+      col++
+    ) {
+      cells.push({ col, row });
+    }
+  }
+  return cells;
+}
+
+function drawCircle(
+  startCol: number,
+  startRow: number,
+  endCol: number,
+  endRow: number,
+): { col: number; row: number }[] {
+  const cells: { col: number; row: number }[] = [];
+  const centerRow = (startRow + endRow) / 2;
+  const centerCol = (startCol + endCol) / 2;
+  const radius =
+    Math.sqrt(Math.pow(endRow - startRow, 2) + Math.pow(endCol - startCol, 2)) /
+    2;
+
+  for (
+    let row = Math.floor(centerRow - radius);
+    row <= Math.ceil(centerRow + radius);
+    row++
+  ) {
+    for (
+      let col = Math.floor(centerCol - radius);
+      col <= Math.ceil(centerCol + radius);
+      col++
+    ) {
+      if (
+        Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2) <=
+        Math.pow(radius, 2)
+      ) {
+        cells.push({ col, row });
+      }
+    }
+  }
+  return cells;
+}
+
+function drawLine(
+  startCol: number,
+  startRow: number,
+  endCol: number,
+  endRow: number,
+): { col: number; row: number }[] {
+  const cells: { col: number; row: number }[] = [];
+  const dx = Math.abs(endCol - startCol);
+  const dy = Math.abs(endRow - startRow);
+  const sx = startCol < endCol ? 1 : -1;
+  const sy = startRow < endRow ? 1 : -1;
+  let err = dx - dy;
+
+  let row = startRow;
+  let col = startCol;
+
+  while (true) {
+    cells.push({ col, row });
+    if (row === endRow && col === endCol) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      col += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      row += sy;
+    }
+  }
+  return cells;
+}
 function handleKeyboardShortcuts(event: KeyboardEvent): void {
   if (
     event.target instanceof HTMLInputElement ||
